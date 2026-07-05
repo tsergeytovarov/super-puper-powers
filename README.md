@@ -1,78 +1,260 @@
 # super-puper-powers
 
-A Claude Code plugin that runs a 10-phase pipeline from a product idea to a deployed product — for people **without developer skills**.
+> English version: [README.en.md](./README.en.md)
 
-Every phase produces one artifact and ends in one gate. Every gate is asked in product language: scenarios, demos, money. Never a diff, never architecture, never "go read the code." Technical decisions (architecture, data model, error handling, stack trade-offs) are made and recorded by the agent — the human only ever approves outcomes they can actually judge.
+Плагин для Claude Code, который проводит человека от сырой идеи до задеплоенного
+продукта за десять фаз — и делает это так, что человеку **не нужно уметь программировать**.
 
-## What is this
+Каждая фаза заканчивается вопросом, на который может ответить владелец продукта, а не
+инженер: про сценарии, про деньги, про то, работает ли демо. Технические решения —
+архитектуру, схему данных, обработку ошибок, выбор стека — агент принимает сам и
+записывает с обоснованием. Ни одного гейта на языке diff-а или архитектуры.
 
-SPP (Super Puper Powers) takes a person from "I have an idea" to "it's live and I know how to keep it running," entirely through conversation. It is built on top of [obra/superpowers](https://github.com/obra/superpowers): the implementation core (spec writing, planning, subagent-driven development, debugging, code review) is vendored from that project. The phases before code (discovery, MVP scoping, stack selection) and after code (release, deploy, post-release) are original to SPP.
+Реализационное ядро взято из [obra/superpowers](https://github.com/obra/superpowers)
+v6.1.1 (MIT, автор Jesse Vincent). Фазы до кода (discovery, MVP, стек) и после
+(релиз, деплой, эксплуатация) — оригинальные.
 
-The pipeline is resumable. State lives in `docs/spp/pipeline-state.md` inside the product's own repository, and any new session picks up exactly where the last one left off.
+---
 
-### The ten phases
+## Зачем это
 
-| Phase | Skill | What happens | The gate |
+Есть человек с идеей продукта — телеграм-бот, маленький веб-сервис, утилита. Кода он не
+пишет. Обычный путь для него закрыт: чтобы дойти до работающего продукта, надо принять
+десятки технических решений, о которых он не может судить, и на каждом шаге кто-то
+спрашивает его про то, в чём он не разбирается.
+
+SPP закрывает этот разрыв. Агент ведёт всю техническую часть, а у человека спрашивает
+только то, на что тот реально может ответить: какую проблему решаем, для кого, какие
+сценарии важны, сколько готов платить за хостинг, тот ли продукт получился на демо. Всё
+остальное — забота агента, и она зафиксирована в документах, которые можно перечитать
+через полгода.
+
+## Почему именно так
+
+Пять принципов. Нарушение любого — дефект, а не стилистика.
+
+1. **Все гейты с человеком — на языке продукта.** Сценарии, демо, деньги. Никогда diff и
+   никогда архитектура. Если на гейте у владельца спрашивают про merge или про схему БД —
+   это сломанный гейт.
+2. **Технические решения агент принимает сам** и фиксирует письменно с обоснованием. У
+   человека спрашивают только то, на что он может ответить.
+3. **Каждая фаза производит документ и заканчивается гейтом.** Через полгода понятно,
+   почему продукт устроен именно так.
+4. **Pipeline возобновляем.** Состояние лежит в `docs/spp/pipeline-state.md`. Любая сессия
+   начинается с чтения этого файла и продолжает с того места, где остановились. Прервать
+   работу и вернуться завтра — штатная ситуация, а не авария.
+5. **Право на no-go.** Discovery может законно закрыть проект. Остановиться на идее, которая
+   не взлетит, — это выигрыш фазы, а не провал: сэкономленные месяцы работы.
+
+## Что берём за основу и что расширяем
+
+obra/superpowers — это библиотека композируемых скиллов, которые заставляют агента
+следовать инженерной дисциплине: TDD, отладка по методу, ревью после каждой задачи,
+«доказательства раньше заявлений», субагенты с чистым контекстом. Всё это — сильное
+ядро **реализации кода**, и оно взято целиком.
+
+Но upstream начинается с технического дизайна и заканчивается на merge. Он молча
+предполагает, что идея валидна, что стек уже выбран, что дальше кто-то сам разберётся с
+деплоем, и что человек по ту сторону гейтов — разработчик. SPP достраивает недостающее:
+
+- **До кода** — фазы discovery, MVP-scoping и выбора стека, которых у upstream нет вовсе.
+- **Ревью документов** — независимая проверка спеки и плана субагентом с чистым контекстом
+  (у upstream ревьюится код, но не спека и не план — непоследовательно).
+- **После кода** — фиксация релиза, выбор и исполнение стратегии деплоя, эксплуатация с
+  петлёй обратной связи.
+- **Оркестратор и state-машина** — переводят разрозненные скиллы в возобновляемый pipeline
+  с гейтами на языке продукта.
+
+## Как устроен pipeline
+
+Десять фаз. Каждая: вход → работа агента → документ-артефакт → гейт с человеком.
+
+| Фаза | Скилл | Артефакт | Гейт |
 |---|---|---|---|
-| 0 | `idea-intake` | Interview: problem, audience, differentiation, success criteria, budget, timeline, jurisdiction | "Did I get the idea right?" |
-| 1 | `product-discovery` | Research competitors, legal risk, market demand, feasibility (quick or deep mode) | go / pivot / stop |
-| 2 | `mvp-scoping` | Prioritize features, define the walking skeleton, cut scope | Approve the scenario list |
-| 3 | `stack-selection` | Propose 2-3 stack options with cost/maintainability trade-offs | Pick a stack |
-| 4 | `spec-writing` (+ `spec-review`, `cross-spec-review`) | Write the technical spec; reviewed for completeness and, for multi-part products, cross-checked between specs | Approve a product-language summary |
-| 5 | `plan-writing` (+ `plan-review`) | Turn the spec into an implementation plan; reviewed for coverage and placeholders | "N tasks, start?" |
-| 6 | `subagent-driven-development` (gate owned by orchestrator) | Implement, test, and review the code; orchestrator runs an acceptance demo | Every must-scenario demonstrated working, live |
-| 7 | `release-fixation` | Version, changelog, tag | "Fix version X?" |
-| 8 | `deploy-strategy` | Choose and execute a deploy plan; smoke-test on production | "Live at X, scenarios verified — accept?" |
-| 9 | `post-release` | Minimal monitoring, a feedback channel, and a loop back to a new idea | Final: operations handbook accepted |
+| 0 | idea-intake | `00-idea-brief.md` | «Я правильно понял идею?» |
+| 1 | product-discovery | `01-discovery-report.md` | go / pivot / stop |
+| 2 | mvp-scoping | `02-mvp-scope.md` | утверждение списка сценариев |
+| 3 | stack-selection | `03-stack.md` | выбор варианта стека |
+| 4 | spec-writing (+ spec-review, cross-spec-review) | `04-specs/` | утверждение продуктового резюме |
+| 5 | plan-writing (+ plan-review) | `05-plans/` | «N задач — стартуем?» |
+| 6 | subagent-driven-development (гейт держит оркестратор) | `06-acceptance-demo.md` | демо: каждый сценарий работает вживую |
+| 7 | release-fixation | `07-release-notes.md` | «фиксируем версию X?» |
+| 8 | deploy-strategy | `08-deploy-runbook.md` | «продукт доступен по X — принимаешь?» |
+| 9 | post-release | `09-operations.md` | финал: операционная памятка принята |
 
-Phase 6 is the exception: its worker skill is vendored as-is from upstream and knows nothing about SPP's state file, so the orchestrator itself owns that phase's gate — it intercepts the handoff to `finishing-a-development-branch` and runs the acceptance demo first.
+Состояние pipeline (`docs/spp/pipeline-state.md`) — это YAML с номером текущей фазы, статусом
+гейта, языком артефактов, юрисдикцией, выбранным стеком и решениями по ходу. Фаза N+1 не
+начинается, пока гейт фазы N не подтверждён. Оркестратор при старте сессии читает этот файл
+и продолжает — поэтому pipeline переживает перезапуск, компакцию контекста и паузу на неделю.
 
-Full phase-to-skill-to-artifact map: `skills/using-super-puper-powers/SKILL.md`.
+## Скиллы — за что отвечает каждый
 
-## Install
+### Оркестрация
 
-From GitHub:
+- **using-super-puper-powers** — мозг плагина. Инжектится в каждую сессию хуком на старте.
+  Читает `pipeline-state.md`, объявляет, на какой фазе pipeline, и запускает нужный скилл.
+  Держит два жёстких правила: следующая фаза не стартует без утверждённого гейта предыдущей;
+  каждый гейт — на языке продукта. Владеет гейтом фазы 6 (см. ниже) и выбирает облегчённый
+  режим церемонии для совсем маленьких идей.
+
+### Фазы 0–3: от идеи до стека (оригинальные скиллы)
+
+- **idea-intake** (фаза 0) — интервью по одному вопросу за раз: проблема, для кого, чем
+  отличается, критерий успеха, бюджет, сроки, юрисдикция (где пользователи, где автор), язык
+  артефактов. То, что уже сказано в описании идеи, не переспрашивает. Пишет бриф и создаёт
+  state-файл. Гейт — пересказ идеи своими словами.
+- **product-discovery** (фаза 1) — ресёрч перед тем, как что-то строить: конкуренты и аналоги,
+  юридические риски под юрисдикцию из брифа, рынок и спрос, осуществимость соло-агентом.
+  Два режима: quick (полчаса, один субагент) и deep (часы, параллельные субагенты плюс
+  проверка фактов). Обязательный раздел «убийцы идеи» и явный вердикт по дифференциатору —
+  выжил / слаб / убит конкурентами. Единственная фаза, где нормальный исход — остановиться.
+- **mvp-scoping** (фаза 2) — из брифа и discovery делает приоритизированный скоуп: must /
+  later / never, walking skeleton (минимальный сквозной сценарий, доказывающий ценность),
+  явный раздел «чего в MVP не будет». Гейт утверждает список сценариев, а не фич. Сверяет,
+  что дифференциатор попал в must, а слабый вердикт discovery выносит отдельным вопросом
+  владельцу.
+- **stack-selection** (фаза 3) — выбирает стек из 2–3 вариантов. Первый критерий —
+  сопровождаемость агентом (мейнстрим с большим корпусом примеров агент чинит лучше
+  экзотики), затем стоимость эксплуатации, скорость до MVP, совместимость с деплоем. Trade-offs
+  формулирует последствиями для владельца («бесплатный хостинг, обновление одной командой»
+  против «гибче, но 20 долларов в месяц»), а не свойствами фреймворков.
+
+### Фаза 4: спека и её ревью
+
+- **spec-writing** (фаза 4) — техническая спека. Переработка upstream-скилла дизайна через
+  диалог: у владельца спрашивают только про продуктовое поведение (сценарии, тексты,
+  крайние случаи), архитектуру и схему данных агент решает сам и фиксирует в спеке. Гейт —
+  продуктовое резюме, полную спеку читать не обязательно.
+- **spec-review** — независимая проверка спеки субагентом с чистым контекстом (получает только
+  спеку, MVP-scope и стек — не историю сессии). Ищет: непокрытые must-сценарии, противоречия,
+  двусмысленности, нереализуемость на стеке, плейсхолдеры. Critical и Important чинятся до
+  гейта, цикл повторяется до чистого прохода.
+- **cross-spec-review** — если продукт разбит на под-проекты, проверяет весь набор спек разом:
+  согласованность интерфейсов, дыры на стыках, противоречия, порядок сборки. Записывает
+  рекомендованный порядок реализации в state.
+
+### Фаза 5: план и его ревью
+
+- **plan-writing** (фаза 5) — план реализации из мелких задач (2–5 минут каждая, с готовым
+  кодом), по которому исполнителю не нужно держать в голове контекст. Переработка
+  upstream-скилла планирования. Каждая задача объявляет тип верификации (unit-тест / приёмка
+  через демо / ручная проверка) — TDD не форсится там, где стек не тянет юнит-тест. Оценивает
+  размер плана и рекомендует облегчённый режим для крошечных идей.
+- **plan-review** — независимая проверка плана субагентом: покрыто ли каждое требование спеки
+  задачей, согласованы ли имена и сигнатуры между задачами, нет ли плейсхолдеров вроде «add
+  appropriate error handling», выполнимы ли шаги. Цикл до чистого прохода.
+
+### Фаза 6: реализация (ядро obra/superpowers, взято как есть)
+
+Эти скиллы vendored из upstream с минимальными правками — только атрибуция, переименование
+ссылок на локальные имена и тонкие guard-ы под гейты SPP.
+
+- **subagent-driven-development** — исполнение плана: свежий субагент на каждую задачу, два
+  ревью после каждой (соответствие спеке, затем качество кода), финальное ревью всей ветки.
+- **test-driven-development** — сначала падающий тест, потом код. Без исключений.
+- **verification-before-completion** — нельзя заявить «готово» или «тесты прошли» без свежего
+  вывода команды. Доказательства раньше заявлений.
+- **using-git-worktrees** — изолированное рабочее пространство под ветку, чтобы задачи не
+  мешали друг другу.
+- **requesting-code-review** / **receiving-code-review** — запрос ревью и работа с
+  замечаниями: не слепое согласие, а техническая проверка каждого пункта.
+- **systematic-debugging** — отладка по методу (найти корень, а не залатать симптом) до того,
+  как предлагать фикс.
+- **dispatching-parallel-agents** — параллельные субагенты на независимые задачи.
+- **finishing-a-development-branch** — интеграция готовой ветки. В SPP обёрнут: техническое
+  меню merge / PR / оставить / выкинуть владельцу не показывается, решение принимает агент.
+  Плюс guard: не завершать ветку, пока приёмочное демо не подтверждено в state.
+
+**Гейт фазы 6 держит оркестратор, а не сам SDD.** После финального ревью ветки оркестратор
+проводит acceptance-демо — поднимает продукт (dev-сервер, установка пакета, бот в тестовом
+режиме) и проводит владельца по каждому must-сценарию. Гейт: «каждый сценарий работает у
+меня на глазах».
+
+### Фазы 7–9: релиз, деплой, эксплуатация (оригинальные скиллы)
+
+- **release-fixation** (фаза 7) — фиксация релиза: verification, завершение ветки (агент
+  выбирает способ сам), semver-версия (первый релиз — 0.1.0), changelog на языке владельца
+  (что теперь умеет продукт, а не список коммитов), git tag. Гейт — «фиксируем версию X?».
+- **deploy-strategy** (фаза 8) — главная ценность в выборе, а не в исполнении рецепта. Сначала
+  2–3 варианта деплоя с trade-offs на языке владельца (сколько в месяц сейчас и при росте,
+  сложность обновления, привязка к вендору, что ломается под нагрузкой), затем исполнение по
+  плейбуку для web-приложений, пакетов или телеграм-ботов. Инварианты: секреты никогда не в
+  git, деплой повторяем, smoke-тест на проде с доказательствами. Два режима гейта: реальный
+  деплой с проверкой или «стратегия выбрана, деплой отложен».
+- **post-release** (фаза 9) — минимальный мониторинг средствами выбранного хостинга (без
+  навязывания платных сервисов), канал обратной связи по типу продукта и петля: фидбек →
+  новый бриф → снова в pipeline. Операционная памятка написана для владельца в стрессовой
+  ситуации, а не для инженера («если бот молчит — сделай A, B, потом напиши агенту»).
+
+## Установка
+
+Из GitHub:
 
 ```
 /plugin marketplace add tsergeytovarov/super-puper-powers
 /plugin install super-puper-powers@super-puper-powers-marketplace
 ```
 
-From a local checkout instead:
+Из локальной копии:
 
 ```
-/plugin marketplace add /path/to/super-puper-powers
+/plugin marketplace add /путь/к/super-puper-powers
 /plugin install super-puper-powers@super-puper-powers-marketplace
 ```
 
-Either form works because `.claude-plugin/marketplace.json` declares the marketplace `super-puper-powers-marketplace` with a single plugin entry, `super-puper-powers`, sourced from `./`. The `@super-puper-powers-marketplace` suffix on `install` is required — Claude Code's `/plugin install` always needs `plugin-name@marketplace-name`, there is no bare-name shorthand.
+Суффикс `@super-puper-powers-marketplace` у `install` обязателен — Claude Code всегда требует
+форму `имя-плагина@имя-маркетплейса`, короткой формы без него нет.
 
-After install, start a new Claude Code session. A `SessionStart` hook injects the pipeline orchestrator (`using-super-puper-powers`) automatically — describe your product idea and it takes over. If you'd rather trigger it explicitly, run `/spp`: it reads `docs/spp/pipeline-state.md` and either resumes the pipeline or offers to start phase 0.
+После установки откройте новую сессию Claude Code. Хук на старте инжектит оркестратор —
+опишите продуктовую идею, и pipeline подхватит её сам. Либо запустите явно командой `/spp`:
+она читает `docs/spp/pipeline-state.md` и продолжает pipeline или предлагает начать с фазы 0.
 
-## Compatibility
+## Совместимость с obra/superpowers
 
-If you also have [obra/superpowers](https://github.com/obra/superpowers) installed, there are two separate problems, and the second one is worse than the first.
+Если рядом установлен сам obra/superpowers, будьте внимательны. Проблемы две.
 
-First, skill-name collisions: SPP's vendored skills share names and near-identical trigger descriptions with the upstream ones (`subagent-driven-development`, `systematic-debugging`, `test-driven-development`, and others). Plugin namespaces keep them technically distinct, but Claude Code triggers skills by description text, not namespace — with both plugins active, a trigger meant for SPP can fire the upstream skill instead, or vice versa.
+**Коллизия имён.** Vendored-скиллы SPP носят те же имена и почти те же описания, что
+upstream (`subagent-driven-development`, `systematic-debugging`, `test-driven-development` и
+другие). Неймспейсы плагинов различаются, но Claude Code триггерит скиллы по тексту описания,
+а не по неймспейсу — при обоих активных плагинах вместо скилла SPP может сработать
+upstream-версия, и наоборот.
 
-Second, and more serious: both plugins install a `SessionStart` hook that injects a full orchestrator skill as an "EXTREMELY_IMPORTANT" always-on block — `using-superpowers` from upstream, `using-super-puper-powers` from SPP. With both plugins enabled, **both hooks fire on every new session**, so the model's system prompt carries two large, near-identical orchestrator injections at once. That's not just wasted context: it doubles the always-on prompt weight, and because triggering is description-based, either orchestrator can end up driving the conversation instead of the one you actually wanted. SPP has no way to detect or disable another plugin's hook — this is a real limitation of running both plugins side by side, not something a config flag inside SPP can paper over.
+**Двойной оркестратор.** Оба плагина ставят SessionStart-хук, и при обоих активных плагинах
+оба хука срабатывают: каждый тащит в системный промпт свой большой блок оркестратора
+(`using-superpowers` и `using-super-puper-powers`). Это раздувает постоянный контекст и
+создаёт риск, что сработает не тот оркестратор.
 
-**Recommendation:** disable `superpowers` for the duration of an SPP pipeline run, not just when you hit a name collision:
+На время работы SPP-pipeline отключите superpowers:
 
 ```
-/plugin disable superpowers@<marketplace-name>
+/plugin disable superpowers@<имя-маркетплейса>
 ```
 
-`/plugin disable` requires the plugin's marketplace name as a suffix — substitute whatever marketplace you added `obra/superpowers` from (check `/plugin marketplace list` if unsure). Re-enable it afterward if you use it for other work. There is no automatic fix on SPP's side for the double-hook problem — this is a manual step you need to take yourself before starting a session.
+SPP не может выключить чужой хук — это ручное действие. Имя маркетплейса подставьте своё
+(посмотреть можно через `/plugin marketplace list`). После работы включите обратно, если
+пользуетесь им для другого.
 
-## Attribution
+## Атрибуция
 
-Based on [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (MIT), author Jesse Vincent. The implementation core (spec writing, planning, subagent-driven development, debugging, code review, and supporting skills) is vendored from that project, in most cases with only an attribution header and SPP-specific renames changed. The discovery, MVP scoping, stack selection, deploy strategy, and post-release phases are original to SPP.
+Основано на [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (MIT), автор
+Jesse Vincent. Реализационное ядро (subagent-driven development, TDD, отладка, ревью кода,
+worktrees, параллельные агенты) vendored из этого проекта — в большинстве случаев с одной лишь
+шапкой атрибуции и переименованием ссылок. Фазы discovery, MVP-scoping, выбора стека, деплоя и
+эксплуатации — оригинальные.
 
-Every vendored or reworked skill carries an attribution header naming what changed. Full provenance — source commit, per-file vendoring status, and the manual sync procedure — is in [`UPSTREAM.md`](./UPSTREAM.md).
+Каждый vendored или переработанный скилл несёт шапку атрибуции с описанием того, что изменено.
+Полная провенанс-таблица — источник, commit, статус каждого файла, процедура ручного sync —
+в [`UPSTREAM.md`](./UPSTREAM.md).
 
-## License
+## Лицензия
 
-SPP's own code is [MIT](./LICENSE), Copyright (c) 2026 Sergey Tovarov.
+Собственный код SPP — [MIT](./LICENSE), Copyright (c) 2026 Sergey Tovarov.
 
-The vendored upstream material remains under its original [MIT license](./LICENSE.superpowers), Copyright (c) 2025 Jesse Vincent.
+Vendored-материал остаётся под своей исходной [MIT-лицензией](./LICENSE.superpowers),
+Copyright (c) 2025 Jesse Vincent.
+
+## Версии
+
+История изменений — в [CHANGELOG.md](./CHANGELOG.md). Текущая версия — 0.3.0: сборка плагина
+(0.1.0), доработки по итогам двух догфуд-прогонов pipeline (0.2.0) и явный вердикт по
+дифференциатору в discovery (0.3.0).
