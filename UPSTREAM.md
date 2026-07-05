@@ -13,15 +13,26 @@ This file tracks what was vendored from `obra/superpowers` into super-puper-powe
 
 ## File inventory
 
-Generated from `git ls-files skills/ LICENSE.superpowers` (22 tracked paths). Status values:
+Generated from `git ls-files skills/ hooks/ LICENSE.superpowers` (30 tracked paths). Status values:
 
 - `vendored as-is` — byte-identical copy from upstream, no edits.
 - `modified` — copied from upstream and edited; see Note for what changed.
+- `reworked` — upstream skill used as a starting point but substantially rewritten (different flow, not just an attribution header or a few renames); see Note.
 - `not copied (reason)` — exists upstream, deliberately not brought in.
+
+Only vendored/modified/reworked files get a row. Files that are original SPP work (the new phase skills, review skills' own `SKILL.md`, `commands/spp.md`, `README.md`, `LICENSE`, `.claude-plugin/*.json`, etc.) are not vendoring artifacts and are intentionally absent from this table.
 
 | Path | Status | Note |
 |---|---|---|
 | `LICENSE.superpowers` | vendored as-is | copy of upstream `LICENSE` |
+| `hooks/hooks.json` | vendored as-is | copy of upstream `hooks/hooks.json` |
+| `hooks/run-hook.cmd` | vendored as-is | copy of upstream `hooks/run-hook.cmd` |
+| `hooks/session-start` | modified | adapted from upstream `hooks/session-start`; skill path and injection text renamed to SPP; Cursor/Copilot platform branches removed |
+| `skills/using-super-puper-powers/SKILL.md` | reworked | reworked from upstream `using-superpowers`; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added |
+| `skills/spec-writing/SKILL.md` | reworked | reworked from upstream `brainstorming`; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped |
+| `skills/plan-writing/SKILL.md` | reworked | reworked from upstream `writing-plans`; plans path `docs/spp/05-plans/`; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option |
+| `skills/spec-review/spec-reviewer.md` | modified | adapted from upstream `brainstorming/spec-document-reviewer-prompt.md` |
+| `skills/plan-review/plan-reviewer.md` | modified | adapted from upstream `writing-plans/plan-document-reviewer-prompt.md` |
 | `skills/dispatching-parallel-agents/SKILL.md` | modified | attribution header only |
 | `skills/finishing-a-development-branch/SKILL.md` | modified | attribution header only |
 | `skills/receiving-code-review/SKILL.md` | modified | attribution header only |
