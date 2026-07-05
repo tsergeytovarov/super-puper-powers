@@ -6,7 +6,7 @@ description: Use when stack is approved (phase 3 approved in docs/spp/pipeline-s
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
 > Modifications: reworked from the upstream design-dialogue skill; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped
 
-# Brainstorming Ideas Into Designs
+# Spec Writing
 
 Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
 

@@ -6,7 +6,7 @@ description: Use when specs are approved (phase 4 approved in docs/spp/pipeline-
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
 > Modifications: reworked from the upstream planning skill; plans path docs/spp/05-plans/; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option
 
-# Writing Plans
+# Plan Writing
 
 ## Overview
 
