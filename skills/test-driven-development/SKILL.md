@@ -3,6 +3,9 @@ name: test-driven-development
 description: Use when implementing any feature or bugfix, before writing implementation code
 ---
 
+> Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
+> Modifications: attribution header
+
 # Test-Driven Development (TDD)
 
 ## Overview

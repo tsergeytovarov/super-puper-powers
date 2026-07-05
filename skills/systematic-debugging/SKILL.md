@@ -3,6 +3,9 @@ name: systematic-debugging
 description: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
 ---
 
+> Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
+> Modifications: attribution header; skill links renamed to SPP names
+
 # Systematic Debugging
 
 ## Overview

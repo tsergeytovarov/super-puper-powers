@@ -3,6 +3,9 @@ name: subagent-driven-development
 description: Use when executing implementation plans with independent tasks in the current session
 ---
 
+> Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
+> Modifications: attribution header; skill links renamed to SPP names; inline-execution alternative removed; SDD workdir renamed to .spp/sdd; example plan paths updated to docs/spp/05-plans
+
 # Subagent-Driven Development
 
 Execute plan by dispatching a fresh implementer subagent per task, a task review (spec compliance + code quality) after each, and a broad whole-branch review at the end.
