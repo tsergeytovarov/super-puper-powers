@@ -49,23 +49,33 @@ Either form works because `.claude-plugin/marketplace.json` declares the marketp
 
 After install, start a new Claude Code session. A `SessionStart` hook injects the pipeline orchestrator (`using-super-puper-powers`) automatically — describe your product idea and it takes over. If you'd rather trigger it explicitly, run `/spp`: it reads `docs/spp/pipeline-state.md` and either resumes the pipeline or offers to start phase 0.
 
-## Compatibility
+## SPP and obra/superpowers: keep one plugin
 
-If you also have [obra/superpowers](https://github.com/obra/superpowers) installed, there are two separate problems, and the second one is worse than the first.
+SPP is an extended replacement for obra/superpowers, not an add-on to it. All of the upstream
+implementation core (TDD, systematic debugging, code review, subagent-driven development,
+worktrees, parallel agents) is vendored inside SPP — same skills, same commands, working
+exactly the same. On top of that, SPP adds the whole pipeline: discovery, MVP, stack, spec,
+deploy, operations.
 
-First, skill-name collisions: SPP's vendored skills share names and near-identical trigger descriptions with the upstream ones (`subagent-driven-development`, `systematic-debugging`, `test-driven-development`, and others). Plugin namespaces keep them technically distinct, but Claude Code triggers skills by description text, not namespace — with both plugins active, a trigger meant for SPP can fire the upstream skill instead, or vice versa.
-
-Second: both plugins install a `SessionStart` hook that injects a full orchestrator skill as an "EXTREMELY_IMPORTANT" always-on block — `using-superpowers` from upstream, `using-super-puper-powers` from SPP. With both plugins enabled, **both hooks fire on every new session**. This has two consequences of different severity.
-
-The "wrong orchestrator drives the pipeline" risk SPP handles on its own. Its hook reads `enabledPlugins` from your Claude Code settings on startup and checks whether an upstream superpowers install is active alongside it. If it is, the hook appends a precedence line to its own injection: pipeline work is driven by the SPP orchestrator, don't use the upstream one for phases. No manual step is needed for this.
-
-The wasted always-on context remains. Both hooks still inject their large block, and SPP can't cancel another plugin's hook. If the always-on prompt weight matters to you, disable `superpowers` for the duration of an SPP pipeline run:
+So **you don't need both plugins, and having both hurts.** If you already have obra/superpowers
+and you want the pipeline, just swap one for the other:
 
 ```
-/plugin disable superpowers@<marketplace-name>
+/plugin uninstall superpowers@<marketplace-name>
+/plugin marketplace add tsergeytovarov/super-puper-powers
+/plugin install super-puper-powers@super-puper-powers-marketplace
 ```
 
-`/plugin disable` requires the plugin's marketplace name as a suffix — substitute whatever marketplace you added `obra/superpowers` from (check `/plugin marketplace list` if unsure). Re-enable it afterward if you use it for other work.
+You lose nothing from superpowers — its whole core now lives inside SPP and updates with it, one
+plugin instead of two — and you gain the idea-to-deploy layer on top.
+
+Why replace rather than run side by side: each plugin installs its own `SessionStart` hook, and
+with both active both fire — the system prompt then carries two large orchestrator blocks
+(`using-superpowers` and `using-super-puper-powers`) at once. That's wasted always-on context,
+and SPP can't cancel another plugin's hook — only you can, by removing one of the plugins. (If
+you do keep both for your own reasons, SPP's hook notices and appends a note that the pipeline is
+driven by it, so the wrong orchestrator doesn't take over — but there's no clean fix here other
+than "keep one plugin.")
 
 ## Attribution
 
