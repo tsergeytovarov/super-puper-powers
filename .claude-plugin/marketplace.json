@@ -1,0 +1,18 @@
+{
+  "name": "super-puper-powers-marketplace",
+  "description": "Marketplace manifest for installing super-puper-powers from this repo",
+  "owner": {
+    "name": "Sergey Tovarov"
+  },
+  "plugins": [
+    {
+      "name": "super-puper-powers",
+      "description": "SPP: a 10-phase pipeline from idea to deployed product for non-developers. Based on obra/superpowers v6.1.1.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "Sergey Tovarov"
+      }
+    }
+  ]
+}
