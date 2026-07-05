@@ -34,11 +34,11 @@ Only vendored/modified/reworked files get a row. Files that are original SPP wor
 | `skills/spec-review/spec-reviewer.md` | modified | adapted from upstream `brainstorming/spec-document-reviewer-prompt.md` |
 | `skills/plan-review/plan-reviewer.md` | modified | adapted from upstream `writing-plans/plan-document-reviewer-prompt.md` |
 | `skills/dispatching-parallel-agents/SKILL.md` | modified | attribution header only |
-| `skills/finishing-a-development-branch/SKILL.md` | modified | attribution header only |
+| `skills/finishing-a-development-branch/SKILL.md` | modified | attribution header only; v0.2 adds an SPP guard at the top of the body that machine-checks pipeline-state.md and stops before finishing if the phase-6 acceptance demo is not approved |
 | `skills/receiving-code-review/SKILL.md` | modified | attribution header only |
 | `skills/requesting-code-review/SKILL.md` | modified | attribution header; inline-execution subsection removed; example plan paths updated to `docs/spp/05-plans` |
 | `skills/requesting-code-review/code-reviewer.md` | vendored as-is | reviewer prompt, not edited |
-| `skills/subagent-driven-development/SKILL.md` | modified | attribution header; skill links renamed to SPP names; inline-execution alternative removed (SPP is always subagent-driven, no `executing-plans` analog); SDD workdir renamed to `.spp/sdd`; example plan paths updated to `docs/spp/05-plans` |
+| `skills/subagent-driven-development/SKILL.md` | modified | attribution header; skill links renamed to SPP names; inline-execution alternative removed (SPP is always subagent-driven, no `executing-plans` analog); SDD workdir renamed to `.spp/sdd`; example plan paths updated to `docs/spp/05-plans`; v0.2 adds three SPP phase-gate guards: a lite-profile pointer near the top of the Process section, a machine-check guard before the finishing-a-development-branch handoff, and a short Git Degradation subsection for commit/worktree/review-package steps |
 | `skills/subagent-driven-development/implementer-prompt.md` | vendored as-is | not edited |
 | `skills/subagent-driven-development/task-reviewer-prompt.md` | vendored as-is | not edited |
 | `skills/subagent-driven-development/scripts/task-brief` | modified | `.superpowers/sdd` → `.spp/sdd` |
