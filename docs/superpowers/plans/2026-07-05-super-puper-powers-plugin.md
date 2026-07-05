@@ -273,7 +273,7 @@ insert_header() {  # $1=file $2=modifications text
 | Файл | Modifications |
 |---|---|
 | subagent-driven-development | `attribution header; skill links renamed to SPP names; inline-execution alternative removed; SDD workdir renamed to .spp/sdd; example plan paths updated to docs/spp/05-plans` |
-| requesting-code-review | `attribution header; skill links renamed to SPP names; inline-execution subsection removed; example plan paths updated to docs/spp/05-plans` |
+| requesting-code-review | `attribution header; inline-execution subsection removed; example plan paths updated to docs/spp/05-plans` (Task 3 не переименовывал ссылки в этом файле — только путь и вырезание подсекции) |
 | остальные 7 | `attribution header; skill links renamed to SPP names` — а если grep по файлу показывает, что ссылок в нём не было, то просто `attribution header` |
 
 - [ ] **Step 3: Проверить**

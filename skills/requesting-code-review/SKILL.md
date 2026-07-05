@@ -4,7 +4,7 @@ description: Use when completing tasks, implementing major features, or before m
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: attribution header; skill links renamed to SPP names; inline-execution subsection removed; example plan paths updated to docs/spp/05-plans
+> Modifications: attribution header; inline-execution subsection removed; example plan paths updated to docs/spp/05-plans
 
 # Requesting Code Review
 
