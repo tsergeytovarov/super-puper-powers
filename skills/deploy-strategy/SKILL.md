@@ -1,0 +1,103 @@
+---
+name: deploy-strategy
+description: Use when a release version is fixed (phase 7 approved in docs/spp/pipeline-state.md) - chooses a deploy strategy with the owner in cost-and-consequence terms, then executes it into a repeatable runbook
+---
+
+## Overview
+
+This is phase 8 of the SPP pipeline. The release is versioned, tagged, and described — now it has to actually go somewhere the owner's users can reach it. This is the one phase where SPP touches production, and the two steps are not equally weighted: choosing *how* to deploy this specific product is the real work; executing the choice is following a playbook.
+
+Step 1 is deliberately not "pick a hosting provider." It's a decision about ongoing money and ongoing effort that the owner has to live with for the life of the product — same shape as `stack-selection` in phase 3, but now the stakes are real: this isn't a plan on paper, it's what happens when someone actually uses the thing. Options get framed the way `stack-selection` frames them — dollars, update effort, what breaks — never as infrastructure jargon on its own. Step 2 then executes against a reference playbook keyed to `product_type`, but "playbook" means reference material to draw on, not a rigid recipe to follow blind; the specific product still dictates specific choices within it.
+
+Three invariants govern step 2 regardless of which playbook applies, and violating any of them is a defect, not a style preference: secrets never enter git, the deploy has to be repeatable from what's in the repo, and the must-scenarios get smoke-tested on production with evidence before the gate. That last one is the same verification discipline that has run through the whole pipeline — it doesn't stop at the branch boundary just because the target is now a live server instead of a laptop.
+
+## Process
+
+### 0. Confirm the trigger and read state
+
+Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 7` and `phase_status: approved` — the release version is fixed (`docs/spp/07-release-notes.md` exists and is approved). Read the inputs before doing anything else:
+
+- `product_type` and `stack` from the state file — what's being deployed and what it's built with.
+- `docs/spp/00-idea-brief.md` — budget and the jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) for data-residency constraints.
+
+On starting work, write `current_phase: 8`, `phase_status: in_progress`.
+
+## Step 1 — choose the strategy
+
+### 1. Gather inputs
+
+Collect what the decision depends on:
+
+- `product_type` and `stack` — already in state, read them, don't re-ask.
+- Budget — already in the brief, read it, don't re-ask.
+- **The owner's existing accounts and infrastructure.** Ask this directly — do they already have a hosting account, a domain, a server, a cloud subscription they're paying for and want to reuse? **Assume nothing here.** Defaulting to "they probably have nothing" or "they probably already have a VPS" are both guesses that can send the whole recommendation sideways; ask instead of picking one.
+- **Jurisdiction's data-residency requirements** — from `jurisdiction.users` and `jurisdiction.author` in the brief. Some jurisdictions require user data to stay hosted within the users' region; check before proposing options, not after the owner has already picked one that turns out to be non-compliant.
+
+### 2. Propose 2-3 options in owner language
+
+Draft two or three concrete deploy options for this `product_type` and `stack`. For each, and for the comparison between them, state the trade-off the way the owner experiences it, not the way an engineer would describe it:
+
+- **$/month now, and $/month at scale** — what it costs at MVP-sized traffic, and what happens to the bill if usage grows.
+- **Update complexity** — is shipping a change one command, or a multi-step ritual the owner has to remember or pay someone to do?
+- **Vendor lock-in** — how hard is it to leave this option later if it stops working out?
+- **What breaks under a traffic spike** — does it fall over, get expensive, or just work?
+
+Technical terms are allowed, but exactly as in `stack-selection`: every one needs a consequence attached. "A managed platform with autoscaling" is not an option description; "handles a traffic spike automatically, costs more per request when it does" is.
+
+### 3. Gate
+
+Present the options and ask the owner to pick one. This is a decision about money and ongoing maintenance, not a technical one — no infrastructure jargon without a consequence attached, no diff, nothing that requires the owner to already know what the words mean. While the question is outstanding, `phase_status: gate_pending`.
+
+- **On a pick:** write the chosen strategy to `deploy_target` in the state file, log the decision in the Decisions log (date, phase 8, the chosen deploy target, who picked it).
+- **On requested changes:** if the owner wants a trade-off explained differently, or their answer to step 1 (existing accounts, budget) changes, revise the options and re-ask.
+
+## Step 2 — execute
+
+### 4. Follow the reference playbook for this product_type
+
+Use the playbook matching `product_type` as reference material — a set of options and considerations to draw on, not a script to execute verbatim. The specific product, stack, and owner's existing infrastructure from step 1 still shape the actual choices made within it.
+
+- `web` → `references/web-apps.md`
+- `package` → `references/packages-and-plugins.md`
+- `tg-bot` → `references/telegram-bots.md`
+- `mixed` → consult whichever playbooks match the components actually being deployed; a mixed product might need more than one.
+
+### 5. Hold the invariants
+
+These are non-negotiable regardless of which playbook applies. Violating any one of them is a defect:
+
+- **Secrets never go in git.** Not in a config file, not in a comment, not in a "temporary" commit meant to be reverted later. Use the mechanism the chosen platform provides for secrets (environment variables, a secrets manager, platform-level config) and reference it in the runbook by description, never by value.
+- **The deploy is repeatable.** A script or a config file in the repo has to be able to reproduce this deploy from scratch. A deploy that only exists as a sequence of manual clicks the agent remembers is not repeatable, and the owner can't reproduce it either.
+- **After deploy, a mandatory smoke test of the must-scenarios on production, with evidence.** This is the same verification discipline that governs the rest of the pipeline, applied to the live product. Pull the must-scenario list from `docs/spp/02-mvp-scope.md` and confirm each one against the actual production deployment — not the dev environment, not a recollection of the acceptance demo. Capture what you observed (output, screenshot, response) as evidence; "I deployed it, it should work" does not satisfy this step.
+
+### 6. Write the artifact
+
+Write `docs/spp/08-deploy-runbook.md` with:
+
+- How the product is deployed — the mechanism, not a jargon dump.
+- How to update it — the actual steps or command for shipping a future change.
+- How to roll back — what to do if a deploy goes wrong.
+- $/month — the actual figure at current scale, from the chosen option in step 2.
+- Where secrets live — a description of the mechanism and location (a named environment variable in the hosting platform's config panel, for example), never the secret values themselves.
+
+### 7. Gate
+
+Ask the owner: **"Product is live at [address/command] — production scenarios verified, here's the evidence — accept?"** Show the smoke-test evidence from step 5, not just the claim that it was done. While the question is outstanding, `phase_status: gate_pending`.
+
+- **On acceptance:** set `phase_status: approved`, log the decision in the Decisions log (date, phase 8, deploy accepted, the live address, who accepted it).
+- **On requested changes:** if a must-scenario failed the smoke test or the owner spots something wrong once they look at the live product, fix it, redeploy, re-run the smoke test, and re-ask. Do not soften the gate to "should be fine now" — re-verify with fresh evidence.
+
+### 8. Hand off
+
+State the next step explicitly: **"Next: the `super-puper-powers:post-release` skill."** Do not start monitoring or feedback-loop setup yourself — this skill's job ends at a deployed, verified, documented release.
+
+## Red Flags
+
+| Thought | Reality |
+|---|---|
+| "They're probably a solo hobbyist with nothing set up, I'll just recommend the free tier" | Existing accounts and infrastructure must be asked about, never assumed. Guessing wrong here means recommending a redundant new account, missing a compliance-relevant constraint the owner's current setup already handles, or ignoring money they're already spending. |
+| "I'll drop the API key straight into the config file, it's just for now" | Secrets never go in git, full stop — there is no "just for now" exception. Use the platform's secrets mechanism and reference it in the runbook by description, not by value. |
+| "I clicked through the hosting dashboard to set this up, it's live, good enough" | The deploy has to be repeatable from a script or config in the repo. A sequence of manual clicks that only exists in the agent's memory can't be reproduced by the owner or by the agent itself next time — that's a defect, not a shortcut. |
+| "The acceptance demo already showed this works, I don't need to re-test on prod" | The smoke test after deploy is mandatory and separate from the acceptance demo — a working branch and a working production deployment are different claims. Verify the actual must-scenarios against the actual live deployment, with evidence, before the gate. |
+| "I'll describe the options as 'serverless vs a VPS with a reverse proxy'" | Every option must be phrased in $/month, update effort, lock-in, and spike behavior — the same owner-consequence discipline as `stack-selection`. Infrastructure jargon without an attached consequence tells a non-developer nothing they can decide on. |
+| "The playbook says to use provider X, so that's what we're using" | The reference playbooks are material to draw on, not a rigid recipe — the actual choice still depends on this product's stack, budget, and the owner's existing infrastructure from step 1. Following a playbook blindly can contradict what step 1 already established. |
