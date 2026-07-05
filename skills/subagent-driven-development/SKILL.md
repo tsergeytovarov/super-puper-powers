@@ -4,7 +4,7 @@ description: Use when executing implementation plans with independent tasks in t
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: attribution header; skill links renamed to SPP names; inline-execution alternative removed; SDD workdir renamed to .spp/sdd; example plan paths updated to docs/spp/05-plans; stray superpowers/ example path renamed to spp
+> Modifications: attribution header; skill links renamed to SPP names; inline-execution alternative removed; SDD workdir renamed to .spp/sdd; example plan paths updated to docs/spp/05-plans; stray superpowers/ example path renamed to spp; added a one-line pointer near the top of the Process section to the SPP orchestrator's lite execution protocol when pipeline_profile is lite; added a machine-check guard before the finishing-a-development-branch handoff that stops and returns to the SPP orchestrator if the phase-6 acceptance demo is not approved in pipeline-state.md; added a short Git Degradation subsection describing honest degradation of commit/worktree/review-package steps when git-write is unavailable
 
 # Subagent-Driven Development
 
@@ -38,6 +38,8 @@ digraph when_to_use {
 ```
 
 ## The Process
+
+If `pipeline_profile: lite` is recorded in `docs/spp/pipeline-state.md`, follow the lite execution protocol described in the SPP orchestrator skill instead of the full per-task dispatch below.
 
 ```dot
 digraph process {
@@ -258,6 +260,15 @@ a ledger file, not only in todos.
 - `git clean -fdx` will destroy the ledger (it's git-ignored scratch); if
   that happens, recover from `git log`.
 
+## Git Degradation
+
+If git-write is unavailable in this environment, the per-task commit,
+worktree, and review-package git steps above degrade: work on the files on
+disk instead. Record the fact honestly in `docs/spp/06-acceptance-demo.md`.
+Never fabricate a green test run or a commit that did not happen. The full
+degradation protocol belongs to the SPP orchestrator skill — this is only
+the local note for this skill's own git-dependent steps.
+
 ## Prompt Templates
 
 - [implementer-prompt.md](implementer-prompt.md) - Dispatch implementer subagent
@@ -399,7 +410,7 @@ Done!
 - **super-puper-powers:using-git-worktrees** - Ensures isolated workspace (creates one or verifies existing)
 - **super-puper-powers:plan-writing** - Creates the plan this skill executes
 - **super-puper-powers:requesting-code-review** - Code review template for the final whole-branch review
-- **super-puper-powers:finishing-a-development-branch** - Complete development after all tasks
+- **super-puper-powers:finishing-a-development-branch** - Complete development after all tasks. Before invoking it, machine-check `docs/spp/pipeline-state.md`: if `docs/spp/06-acceptance-demo.md` is not recorded as approved there, stop and return to the SPP orchestrator instead of invoking it.
 
 **Subagents should use:**
 - **super-puper-powers:test-driven-development** - Subagents follow TDD for each task

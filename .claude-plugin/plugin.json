@@ -1,6 +1,6 @@
 {
   "name": "super-puper-powers",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SPP: a 10-phase pipeline from idea to deployed product for non-developers. Based on obra/superpowers v6.1.1.",
   "author": {
     "name": "Sergey Tovarov"
@@ -8,5 +8,12 @@
   "homepage": "https://github.com/tsergeytovarov/super-puper-powers",
   "repository": "https://github.com/tsergeytovarov/super-puper-powers",
   "license": "MIT",
-  "keywords": ["pipeline", "product", "mvp", "discovery", "deploy", "skills"]
+  "keywords": [
+    "pipeline",
+    "product",
+    "mvp",
+    "discovery",
+    "deploy",
+    "skills"
+  ]
 }

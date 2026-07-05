@@ -4,7 +4,7 @@ description: Use when starting any conversation - orchestrates the SPP pipeline 
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added
+> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes
 
 <SUBAGENT-STOP>
 If you were dispatched as a subagent to execute a specific task, ignore this skill.
@@ -40,8 +40,10 @@ The SPP pipeline turns a product idea into a deployed product across ten phases,
 | 5 | plan-writing (+plan-review) | docs/spp/05-plans/ | "N tasks, start?" |
 | 6 | subagent-driven-development (gate owned by orchestrator) | docs/spp/06-acceptance-demo.md | acceptance demo: every must-scenario works |
 | 7 | release-fixation | docs/spp/07-release-notes.md | "fix version X?" |
-| 8 | deploy-strategy | docs/spp/08-deploy-runbook.md | "product live at X, accept?" |
+| 8 | deploy-strategy | docs/spp/08-deploy-runbook.md | two modes — see below |
 | 9 | post-release | docs/spp/09-operations.md | final: ops handbook accepted |
+
+Phase 8's gate has two modes, recorded as `deploy_status` in state: `executed` — a real deploy with a production smoke test and evidence, gated on the product being live and verified — or `deferred` — a deploy strategy is chosen and the runbook is ready, but the deploy itself is postponed, gated on accepting the strategy and runbook with no live-evidence requirement. The exact gate wording for each mode lives in `deploy-strategy`; this map only names the two modes. `deploy-strategy` (phase 8) owns the choice between the two; `post-release` (phase 9) reads `deploy_status` and, when it's `deferred`, does not treat the product as live.
 
 ## Session Start Protocol
 
@@ -74,9 +76,31 @@ Phase 6 is different: its worker skill is the vendored subagent-driven-developme
 - After subagent-driven-development's final whole-branch review completes, the orchestrator runs the **acceptance demo**: for every must-scenario recorded in the MVP scope, demonstrate it running live and record the result. Write the outcome to `docs/spp/06-acceptance-demo.md` as scenario → how demonstrated → result.
 - While the demo is in progress, `phase_status` is `gate_pending`. A failed scenario is not a gate failure to negotiate around — it's a task: fix it, then re-run the demo for that scenario.
 
-<HARD-GATE>finishing-a-development-branch MUST NOT be invoked until the acceptance demo is approved in docs/spp/pipeline-state.md (phase_status: gate_pending during the demo).</HARD-GATE>
+<HARD-GATE>
+Before ANY invocation of finishing-a-development-branch — by the orchestrator or by any agent, including one arriving at that step from inside subagent-driven-development with no memory of this rule — you MUST machine-check `docs/spp/pipeline-state.md` first: open the file, read it, and confirm `docs/spp/06-acceptance-demo.md` is recorded as approved. Do not rely on recalling that the demo happened; recollection is exactly what a compacted context loses. If the file does not exist, or `06-acceptance-demo.md` is not approved in it, STOP — do not invoke finishing-a-development-branch under any circumstance. Return control to this orchestrator instead; the acceptance demo is not optional ceremony, it is the only human-facing verification phase 6 has.
+</HARD-GATE>
+
+The vendored subagent-driven-development skill walks straight from its final whole-branch review into finishing-a-development-branch with no awareness of this check — that gap is what this hard-gate exists to close from the orchestrator side. (A corresponding guard inside the vendored skills themselves is tracked separately; this rule does not depend on that guard existing, and does not weaken if it doesn't.)
 
 After approval, hand off to the release-fixation skill (phase 7) — release-fixation is what actually invokes finishing-a-development-branch, wrapped so its merge/PR/keep/discard menu never reaches the user as a gate.
+
+## Phase 6 Execution Profile
+
+`plan-writing` (phase 5) estimates the plan's size and writes a recommendation to `pipeline_profile` in state: `lite` if the plan is ≤ 3 tasks and roughly ≤ 150 lines total, `full` otherwise. Read `pipeline_profile` from state before launching phase 6 — it decides which execution path phase 6 actually runs.
+
+This is an orchestrator-level protocol layered **over** vendored subagent-driven-development, not a rewrite of it. The vendored skill itself stays as-is; the switch below decides how much of it gets invoked.
+
+**`pipeline_profile: full` (or `null`)** — the standard path. Run subagent-driven-development exactly as vendored: a fresh implementer subagent per task, a task review after each task, git-worktree isolation via `using-git-worktrees`, and the final whole-branch review.
+
+**`pipeline_profile: lite`** — a lightweight path for plans small enough that the standard machinery is pure overhead relative to the work:
+
+- Dispatch **one** implementer subagent for the entire plan, not one per task. Give it the whole plan document (it's small enough to hand over directly) instead of extracting per-task briefs.
+- Skip per-task fresh-subagent dispatch and skip per-task review — there is no task-by-task review loop in lite.
+- Skip git-worktree isolation — work happens in the current workspace rather than standing up an isolated worktree via `using-git-worktrees`.
+- Run **one** final review at the end: a single whole-branch review over everything the implementer produced, using the same final-review mechanism the full path uses (`super-puper-powers:requesting-code-review`'s reviewer template). This review is not optional and not skipped — it's the only review lite gets, so it carries the full weight the per-task reviews would otherwise share.
+- `spec-review`, `cross-spec-review`, and `plan-review` (phases 4-5) still run regardless of profile. They're cheap relative to phase 6 and catch defects before any code is written — lite only thins phase 6's execution machinery, never the upstream review gates that precede it.
+
+The size threshold that decides `full` vs `lite` is set once, in `plan-writing`'s size-estimate step (phase 5) — this skill only reads and acts on the recommendation; it does not re-derive or second-guess the threshold here.
 
 ## Mid-Pipeline Entry
 
@@ -123,6 +147,9 @@ These thoughts mean STOP—you're rationalizing:
 | "The user is technical, I can show the diff" | Gates are product-language. Always. |
 | "Spec looks fine, skip spec-review" | The review loop is mandatory. |
 | "I'll start phase N+1, the gate is obviously fine" | approved in the state file, or it didn't happen. |
+| "I remember the acceptance demo passed, I'll go straight to finishing-a-development-branch" | Memory is not the gate. Machine-check `docs/spp/pipeline-state.md` for `06-acceptance-demo.md` approved, every single time, even (especially) after a context compaction that erased the memory of running the demo. |
+| "The plan is tiny, I'll skip straight to lite without checking `pipeline_profile`" | `pipeline_profile` is set by `plan-writing`'s size estimate, not by eyeballing the plan in phase 6. Read the field; don't re-derive the threshold here. |
+| "Lite mode means we can also skip plan-review since the plan is small" | Lite only thins phase 6 execution machinery. `spec-review`, `cross-spec-review`, and `plan-review` run regardless of profile — they're cheap and they catch defects before code exists. |
 
 ## User Instructions
 

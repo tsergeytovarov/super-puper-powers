@@ -107,12 +107,17 @@ jurisdiction:
 current_phase: 0..9 | done
 phase_status: in_progress | gate_pending | approved | stopped
 phases_skipped: []            # номера фаз, пропущенных по явному решению пользователя (§5.0)
+pipeline_profile: full | lite | null   # церемония фазы 6; lite для крошечных планов (§5.8, §5.10)
 discovery_mode: quick | deep | null
 product_type: web | package | tg-bot | mixed | null
 stack: <утверждённый стек | null>
 subproject_order: null        # список slug'ов под-проектов; пишет cross-spec-review (§5.7)
 deploy_target: <утверждённая стратегия | null>
+deploy_status: executed | deferred | null   # deferred = стратегия+runbook приняты, деплой отложен (§5.12)
 ```
+
+- **`pipeline_profile`** (v0.2): `plan-writing` оценивает размер плана; если план ≤ 3 задач и суммарно ≤ ~150 строк — рекомендует `lite`. В `lite` фаза 6 использует облегчённый путь (один имплементер на план + одно финальное whole-branch ревью, без per-task fresh-субагента и per-task review); spec-review/plan-review сохраняются. Иначе `full`. Протокол lite описан в оркестраторе (§5.0), не в vendored SDD.
+- **`deploy_status`** (v0.2): `deploy-strategy` (§5.12) закрывает гейт в одном из режимов — `executed` (реальный деплой + прод-смоук с evidence) или `deferred` (стратегия выбрана, runbook готов, деплой отложен, live-evidence не требуется). При `deferred` `post-release` (§5.13) не считает продукт живым и пишет памятку в режиме «когда задеплоишь».
 
 Плюс секции: `## Decisions log` (дата, фаза, решение, кем принято) и `## Artifacts` (ссылки на файлы фаз). Каждый гейт добавляет запись в Decisions log.
 

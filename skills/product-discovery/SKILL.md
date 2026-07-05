@@ -11,6 +11,8 @@ This is the only phase in the pipeline where stopping outright is a designed, ce
 
 Research runs in subagents with fresh context, never session history — you construct exactly what each one needs from the brief.
 
+Some environments (sandboxed, headless) give a research subagent no web-search tools at all. That is not a reason to stop or to let the subagent quietly improvise — see the fallback in step 1.5.
+
 ## Process
 
 ### 0. Confirm the trigger and read state
@@ -27,6 +29,18 @@ First question to the user, multiple choice:
 - **Deep** (a few hours): four research subagents run in parallel, each covering one domain in depth, followed by an adversarial check that verifies the report's key claims against primary sources.
 
 Record the answer in `discovery_mode` in the state file before dispatching any research.
+
+### 1.5. Fallback when a research subagent has no web tools
+
+Before dispatching, and again if a dispatched subagent reports back that it had no web-search tools available: this happens in sandboxed or headless environments where the subagent literally cannot reach the web. It is not a reason to stop discovery, and it is not license for the subagent to quietly wing it as if it had searched.
+
+Instruct every research subagent explicitly, in its prompt, to follow this fallback when web tools are unavailable to it:
+
+- Answer from the model's own knowledge instead of search results.
+- Mark every conclusion that rests on that knowledge as **"not verified against primary sources"** — not a vague hedge once at the top, but attached to the specific claims it covers.
+- Never invent a URL, a source name, or a citation to make an unverified answer look sourced. No web access means no citations, not fabricated ones.
+
+This applies per-subagent in deep mode (some subagents may have web tools while others don't, in principle) and to the single subagent in quick mode. Whenever any subagent's contribution used this fallback, carry that mark into the synthesized report in step 4 and into the artifact in step 6 — a downstream reader must be able to tell which parts of the report are search-backed and which are model-knowledge-only.
 
 ### 2. Deep mode — four parallel subagents
 
@@ -51,7 +65,7 @@ Market and demand (item 3) is skipped entirely in quick mode — say so plainly 
 
 ### 4. Synthesize
 
-Combine the subagent output(s) into a single report. Don't just concatenate — reconcile overlaps and contradictions between subagents yourself.
+Combine the subagent output(s) into a single report. Don't just concatenate — reconcile overlaps and contradictions between subagents yourself. If any subagent used the no-web-tools fallback from step 1.5, carry its "not verified against primary sources" marks through into the synthesized text on the specific claims they cover — synthesis must not smooth an unverified claim into a confident-sounding sentence that loses the mark.
 
 ### 5. Adversarial check — deep mode only
 
@@ -65,13 +79,17 @@ Write `docs/spp/01-discovery-report.md`. Mandatory sections:
 
 - **Idea killers** — every legal, market, or competitive dealbreaker found, or an explicit "none found" if the research turned up nothing disqualifying. This section may not be omitted or left implicit.
 - **Recommendation: go / pivot / no-go** — one of the three, with the reasoning that leads to it. "No-go" here is the report's recommendation going into the gate; the gate itself offers the user go / pivot / stop (below) — this section is what backs that gate's stop option, not a separate decision, so word it as the case *for* stopping, not a vague warning.
+- If any part of the report relied on the no-web-tools fallback (step 1.5): the "not verified against primary sources" mark on every affected claim, carried through from synthesis — not summarized away as a single footnote that loses which claims it covers.
 - If quick mode: a plain statement that no adversarial verification ran and market/demand wasn't researched.
+- If quick mode: the mandatory owner warning from step 7 below — it belongs in this artifact, not only spoken at the gate, so the record shows the owner was told before deciding.
 
 ### 7. Gate
 
 Present the recommendation and ask the user to decide: **go**, **pivot**, or **stop**. This is a business call about whether to keep going, not a technical one — no diff, no architecture, no code. While the question is outstanding, `phase_status: gate_pending`.
 
-- **Go:** the idea clears discovery. Set `phase_status: approved`, log the decision in the Decisions log (date, phase 1, "go", who decided).
+**In quick mode, before asking for the decision**, state this warning to the user plainly, next to the recommendation — this is mandatory, not optional context they can miss by skimming: **"Go is being decided WITHOUT demand data; if demand is uncertain, go back and run deep."** This sits alongside the existing quick-mode caveats (no adversarial check, market/demand not researched) — it exists because those caveats describe what wasn't checked, while this one names the actual consequence for the decision the user is about to make. Do not fold it silently into the general disclaimer text; it must read as a warning attached to the go option specifically, since "go" is the choice it's warning about.
+
+- **Go:** the idea clears discovery. Set `phase_status: approved`, log the decision in the Decisions log (date, phase 1, "go", who decided). In quick mode, log that the owner was warned about missing demand data alongside the decision.
 - **Pivot:** the brief itself needs to change — a different angle, a narrower audience, a different problem. Go back to `idea-intake`: set `current_phase: 0`, `phase_status: in_progress`, and log the pivot and its reason in the Decisions log. `idea-intake` re-runs the interview for the fields that changed, editing the existing brief rather than starting from nothing.
 - **Stop:** the pipeline ends here, on purpose. Set `phase_status: stopped` and log the reason in the Decisions log. Say this out loud to the user in plain terms: this is a successful outcome — the research just saved them months of work on an idea that wasn't going to pay off. Do not apologize for the recommendation or soften it into a failure.
 
@@ -91,3 +109,6 @@ On pivot or stop, there is no "next skill" to hand off to in this phase — pivo
 | "Competitors and feasibility look fine, I'll skip writing an explicit 'Idea killers' section" | The section is mandatory even when empty. Write "none found" — an absent section reads as "not checked," not "checked, clean." |
 | "Legal risk only needs the users' jurisdiction, the author's country doesn't build the product" | Both jurisdiction fields apply — the author's country can impose its own licensing, tax, or data-handling obligations regardless of where users sit. Checking one and skipping the other leaves a real risk unresearched. |
 | "The gate is basically approve/reject, I can phrase it as ship-it-or-not on the tech" | Gate is go/pivot/stop in product terms — market and legal reality, not implementation. Framing it around code or architecture asks the user to evaluate something they can't. |
+| "No web tools for this subagent — I'll answer confidently from what I know and skip the caveat" | Model-knowledge answers are legal, but every conclusion they produce must be marked "not verified against primary sources." Dropping the mark makes an unverified guess look like a researched finding. |
+| "I don't have a real source for this claim but I need one to look credible, I'll cite a plausible-sounding one" | Never invent a URL or source name. No web access means no citations — a fabricated one is worse than an honest "not verified" mark, because it actively misleads whoever checks it. |
+| "Quick mode already says market/demand wasn't researched, that covers the go-decision risk too" | The 'not researched' caveat describes what didn't happen; the mandatory warning at the gate names the consequence for the decision itself. Quick mode requires both — one doesn't substitute for the other. |

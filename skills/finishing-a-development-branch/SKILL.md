@@ -4,7 +4,9 @@ description: Use when implementation is complete, all tests pass, and you need t
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: attribution header; brand mention renamed to Super-Puper-Powers
+> Modifications: attribution header; brand mention renamed to Super-Puper-Powers; added an SPP guard at the top that machine-checks pipeline-state.md and stops before finishing if the phase-6 acceptance demo is not approved
+
+**SPP guard:** If `docs/spp/pipeline-state.md` exists and `docs/spp/06-acceptance-demo.md` is not recorded as approved in it, STOP — do not finish the branch. The SPP phase-6 acceptance gate has not passed; return control to the SPP orchestrator. (This runs even if an agent reached here directly.)
 
 # Finishing a Development Branch
 

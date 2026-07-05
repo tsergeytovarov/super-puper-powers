@@ -15,8 +15,10 @@ The gate at the end approves scenarios, not features. The person approving this 
 
 Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 1` and `phase_status: approved` — discovery ran and the decision was "go." Read both inputs before doing anything else:
 
-- `docs/spp/00-idea-brief.md` — the original problem, audience, success criterion, budget, timeline.
-- `docs/spp/01-discovery-report.md` — competitors, legal risks, market read, feasibility; this is what keeps prioritization honest instead of wishful.
+- `docs/spp/00-idea-brief.md` — the original problem, audience, success criterion, budget, timeline, and the **differentiation** answer: how this product is different from what already exists, what people do today instead.
+- `docs/spp/01-discovery-report.md` — competitors, legal risks, market read, feasibility, and the **idea killers** section; this is what keeps prioritization honest instead of wishful.
+
+Hold on to the differentiator and the idea killers specifically — step 2 checks the must list against both of them, not just against the brief in general.
 
 On starting work, write `current_phase: 2`, `phase_status: in_progress`.
 
@@ -33,6 +35,10 @@ Sort the full list into three buckets:
 - **Never** — out of scope for this product, not just this version (distinct from "later" — say which one and why).
 
 Obvious calls (a to-do app clearly needs to create items; it clearly doesn't need a plugin marketplace) don't need a question each — place them yourself and note the placement when you present the scope. Ask the user only about the **contentious items**: the ones where reasonable people would disagree, or where the brief's success criterion doesn't obviously settle it. Ask about **one contentious item per question**. Never batch two contentious calls into one message — a non-technical user asked to weigh two trade-offs at once tends to answer only the one that's easier to picture, and the other gets rubber-stamped without real consideration.
+
+**Verify the differentiator landed in must.** Once the buckets are sorted, explicitly check: does the feature or capability that embodies the brief's differentiation answer sit in **must**? This is a distinct, mandatory check, not something that falls out of the general sort automatically — a differentiator can legally lose every individual prioritization call it's involved in (each one looking reasonable on its own) and still end up in later or never as a result, quietly gutting the product of the one thing that was supposed to set it apart. Also check it against the idea killers in `01-discovery-report.md`: if discovery flagged a competitive gap or weakness that the differentiator is specifically supposed to close, confirm the must-list item that closes it is the same one, not a watered-down substitute.
+
+If the differentiator is in must, note that explicitly when you present the scope — a one-line confirmation, not a silent pass. If it has drifted to **later** or **never**, that placement is not final on the strength of the ordinary must/later/never reasoning alone: flag it as its own contentious item at the gate in step 7, state in plain product language what the product loses by not differentiating at launch, and require the owner to explicitly accept that trade-off rather than let it ride through as one row in a table.
 
 ### 3. Design the walking skeleton
 
@@ -65,8 +71,10 @@ Write `docs/spp/02-mvp-scope.md` with:
 
 Present the **list of scenarios** — not the feature list, not the must/later/never table — and ask the user to approve it. The feature table and the "will not do" section are supporting context the user can skim; what they are actually signing off on is: does this sequence of user actions and outcomes match what they expect the first version to do. This distinction matters — a feature list describes a build, a scenario describes an experience, and only the second is something the person approving can meaningfully judge. While the question is outstanding, `phase_status: gate_pending`.
 
-- **On approval:** set `phase_status: approved`, log the decision in the Decisions log (date, phase 2, "MVP scope approved," who approved it).
-- **On requested changes:** update the scope document — and the must/later/never calls behind it if the correction implies a different priority — and re-ask.
+**If the differentiator drifted to later or never** (per the check in step 2), this is not covered by ordinary scenario approval — surface it as its own explicit call at this gate, separate from the scenario sign-off: state in plain product language what makes this product different from what exists today, and that the current scope launches without it. Ask the owner to explicitly accept that trade-off. Do not let it pass silently inside a "yes, approved" on the scenario list — the owner may be approving the walking skeleton without registering that the one thing that was supposed to set the product apart isn't in it.
+
+- **On approval:** set `phase_status: approved`, log the decision in the Decisions log (date, phase 2, "MVP scope approved," who approved it). If the differentiator was deferred, log that acceptance as its own line in the Decisions log, separate from the general scope approval — date, phase 2, "differentiator deferred to later/never, accepted by owner," the reason given.
+- **On requested changes:** update the scope document — and the must/later/never calls behind it if the correction implies a different priority — and re-ask. If the requested change is to pull the differentiator back into must, re-run the affected prioritization calls, not just the scope document text.
 
 ### 8. Hand off
 
@@ -82,3 +90,5 @@ State the next step explicitly: **"Next: the `super-puper-powers:stack-selection
 | "I'll scope this by listing which must-have features are in v1" | The unit of MVP scope is the walking skeleton scenario, not the feature. A feature list can be complete and still not describe an actual usable path through the product — scenarios force the end-to-end check that a feature checklist skips. |
 | "The walking skeleton is basically a technical smoke test — confirms the server starts, the DB connects" | It's a user scenario, not an infra check. If it isn't expressible as "user does X → Y happens" with a human on both ends, it isn't the walking skeleton. |
 | "This feature is obviously out of scope for now, I'll mark it 'never' since it's not happening soon" | "Never" and "later" are different claims — "later" means real value deferred, "never" means out of scope for this product, period. Marking a deferred feature "never" forecloses something the user may have expected to revisit. |
+| "Each of these three calls that touch the differentiator was individually reasonable, so the overall placement must be fine" | Individually reasonable calls can still add up to the differentiator drifting out of must — that's exactly why it needs an explicit, separate check after sorting, not just trust in the sum of the individual calls. |
+| "The differentiator ended up in later, but that's covered by the general must/later/never table the owner already saw" | A drifted differentiator needs its own explicit flag and owner acceptance at the gate, in plain product language — not a row the owner can approve without registering what it costs the product's positioning. |
