@@ -4,7 +4,7 @@ description: Use when stack is approved (phase 3 approved in docs/spp/pipeline-s
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream design-dialogue skill; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain
+> Modifications: reworked from the upstream design-dialogue skill; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped
 
 # Brainstorming Ideas Into Designs
 
@@ -27,7 +27,7 @@ You MUST create a task for each of these items and complete them in order:
 1. **Explore project context** — read `pipeline-state.md`, `02-mvp-scope.md`, `03-stack.md`, plus files/docs/recent commits
 2. **Ask clarifying questions** — one at a time, product behavior only: UX, copy/text, scenario edge-cases
 3. **Propose 2-3 approaches** — with trade-offs and your recommendation
-4. **Present design** — in sections scaled to their complexity, get user approval after each section
+4. **Work out the design** — confirm product behavior (scenarios, UX, copy) with the user; decide and document architecture/data/error-handling yourself, don't put them up for user sign-off
 5. **Write design doc** — save to `docs/spp/04-specs/YYYY-MM-DD-<topic>-design.md` and commit
 6. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 7. **spec-review** — invoke `super-puper-powers:spec-review`, fix Critical/Important findings, repeat until clean
@@ -42,8 +42,8 @@ digraph spec_writing {
     "Read state + mvp-scope + stack" [shape=box];
     "Ask clarifying questions\n(product behavior only)" [shape=box];
     "Propose 2-3 approaches" [shape=box];
-    "Present design sections" [shape=box];
-    "User approves design?" [shape=diamond];
+    "Work out design\n(confirm behavior with user)" [shape=box];
+    "Behavior confirmed?" [shape=diamond];
     "Write design doc" [shape=box];
     "Spec self-review\n(fix inline)" [shape=box];
     "spec-review\n(fix + re-review until clean)" [shape=box];
@@ -55,10 +55,10 @@ digraph spec_writing {
 
     "Read state + mvp-scope + stack" -> "Ask clarifying questions\n(product behavior only)";
     "Ask clarifying questions\n(product behavior only)" -> "Propose 2-3 approaches";
-    "Propose 2-3 approaches" -> "Present design sections";
-    "Present design sections" -> "User approves design?";
-    "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write design doc" [label="yes"];
+    "Propose 2-3 approaches" -> "Work out design\n(confirm behavior with user)";
+    "Work out design\n(confirm behavior with user)" -> "Behavior confirmed?";
+    "Behavior confirmed?" -> "Work out design\n(confirm behavior with user)" [label="no, revise"];
+    "Behavior confirmed?" -> "Write design doc" [label="yes"];
     "Write design doc" -> "Spec self-review\n(fix inline)";
     "Spec self-review\n(fix inline)" -> "spec-review\n(fix + re-review until clean)";
     "spec-review\n(fix + re-review until clean)" -> "More than one spec?";
@@ -92,13 +92,13 @@ digraph spec_writing {
 - Present options conversationally with your recommendation and reasoning
 - Lead with your recommended option and explain why
 
-**Presenting the design:**
+**Working out the design:**
 
-- Once you believe you understand what you're building, present the design
-- Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced
-- Ask after each section whether it looks right so far
-- Cover: architecture, components, data flow, error handling, testing
-- Be ready to go back and clarify if something doesn't make sense
+- Once you believe you understand what you're building, work out the design.
+- Two audiences, kept apart. What you check with the USER is product behavior only: scenarios, UX, screens/commands, copy/text, what happens on typical errors from the user's point of view. Walk the user through that behavior in plain language and confirm it as you go — this is where the design dialogue lives.
+- Architecture, components, data flow, data schema, and internal error handling are the AGENT's to decide. You document them in the spec with a justification; you do NOT hand them to the user for per-section sign-off (the user is assumed not to be a developer — an approval they cannot evaluate is meaningless).
+- Scale each part to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced.
+- Be ready to go back and clarify if something doesn't make sense.
 
 **Design for isolation and clarity:**
 
@@ -119,7 +119,7 @@ digraph spec_writing {
 
 - Write the validated design (spec) to `docs/spp/04-specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
-- Use elements-of-style:writing-clearly-and-concisely skill if available
+- Write clearly and concisely.
 - Commit the design document to git
 
 **Spec Self-Review:**
