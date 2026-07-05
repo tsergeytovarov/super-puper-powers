@@ -51,15 +51,19 @@ After install, start a new Claude Code session. A `SessionStart` hook injects th
 
 ## Compatibility
 
-If you also have [obra/superpowers](https://github.com/obra/superpowers) installed, be aware: SPP's vendored skills share names and near-identical trigger descriptions with the upstream ones (`subagent-driven-development`, `systematic-debugging`, `test-driven-development`, and others). Plugin namespaces keep them technically distinct, but Claude Code triggers skills by description text, not namespace — with both plugins active, a trigger meant for SPP can fire the upstream skill instead, or vice versa.
+If you also have [obra/superpowers](https://github.com/obra/superpowers) installed, there are two separate problems, and the second one is worse than the first.
 
-**Recommendation:** disable `superpowers` while running an SPP pipeline:
+First, skill-name collisions: SPP's vendored skills share names and near-identical trigger descriptions with the upstream ones (`subagent-driven-development`, `systematic-debugging`, `test-driven-development`, and others). Plugin namespaces keep them technically distinct, but Claude Code triggers skills by description text, not namespace — with both plugins active, a trigger meant for SPP can fire the upstream skill instead, or vice versa.
+
+Second, and more serious: both plugins install a `SessionStart` hook that injects a full orchestrator skill as an "EXTREMELY_IMPORTANT" always-on block — `using-superpowers` from upstream, `using-super-puper-powers` from SPP. With both plugins enabled, **both hooks fire on every new session**, so the model's system prompt carries two large, near-identical orchestrator injections at once. That's not just wasted context: it doubles the always-on prompt weight, and because triggering is description-based, either orchestrator can end up driving the conversation instead of the one you actually wanted. SPP has no way to detect or disable another plugin's hook — this is a real limitation of running both plugins side by side, not something a config flag inside SPP can paper over.
+
+**Recommendation:** disable `superpowers` for the duration of an SPP pipeline run, not just when you hit a name collision:
 
 ```
 /plugin disable superpowers@<marketplace-name>
 ```
 
-`/plugin disable` requires the plugin's marketplace name as a suffix — substitute whatever marketplace you added `obra/superpowers` from (check `/plugin marketplace list` if unsure). Re-enable it afterward if you use it for other work.
+`/plugin disable` requires the plugin's marketplace name as a suffix — substitute whatever marketplace you added `obra/superpowers` from (check `/plugin marketplace list` if unsure). Re-enable it afterward if you use it for other work. There is no automatic fix on SPP's side for the double-hook problem — this is a manual step you need to take yourself before starting a session.
 
 ## Attribution
 
