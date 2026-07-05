@@ -43,7 +43,7 @@ The SPP pipeline turns a product idea into a deployed product across ten phases,
 | 8 | deploy-strategy | docs/spp/08-deploy-runbook.md | two modes — see below |
 | 9 | post-release | docs/spp/09-operations.md | final: ops handbook accepted |
 
-Phase 8's gate has two modes, recorded as `deploy_status` in state: `executed` — a real deploy with a production smoke test and evidence, gated on "product live at X, accept?" — or `deferred` — a deploy strategy is chosen and the runbook is ready, but the deploy itself is postponed, gated on "strategy chosen, runbook ready — accept deferring deploy?" with no live-evidence requirement. `deploy-strategy` (phase 8) owns the choice between the two; `post-release` (phase 9) reads `deploy_status` and, when it's `deferred`, does not treat the product as live.
+Phase 8's gate has two modes, recorded as `deploy_status` in state: `executed` — a real deploy with a production smoke test and evidence, gated on the product being live and verified — or `deferred` — a deploy strategy is chosen and the runbook is ready, but the deploy itself is postponed, gated on accepting the strategy and runbook with no live-evidence requirement. The exact gate wording for each mode lives in `deploy-strategy`; this map only names the two modes. `deploy-strategy` (phase 8) owns the choice between the two; `post-release` (phase 9) reads `deploy_status` and, when it's `deferred`, does not treat the product as live.
 
 ## Session Start Protocol
 
