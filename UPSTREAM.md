@@ -27,7 +27,7 @@ Only vendored/modified/reworked files get a row. Files that are original SPP wor
 | `LICENSE.superpowers` | vendored as-is | copy of upstream `LICENSE` |
 | `hooks/hooks.json` | vendored as-is | copy of upstream `hooks/hooks.json` |
 | `hooks/run-hook.cmd` | vendored as-is | copy of upstream `hooks/run-hook.cmd` |
-| `hooks/session-start` | modified | adapted from upstream `hooks/session-start`; skill path and injection text renamed to SPP; Cursor/Copilot platform branches removed |
+| `hooks/session-start` | modified | adapted from upstream `hooks/session-start`; skill path and injection text renamed to SPP; Cursor/Copilot platform branches removed; v0.3.1 detects a co-active upstream superpowers via enabledPlugins and appends an orchestrator-precedence note |
 | `skills/using-super-puper-powers/SKILL.md` | reworked | reworked from upstream `using-superpowers`; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added |
 | `skills/spec-writing/SKILL.md` | reworked | reworked from upstream `brainstorming`; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped |
 | `skills/plan-writing/SKILL.md` | reworked | reworked from upstream `writing-plans`; plans path `docs/spp/05-plans/`; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option |

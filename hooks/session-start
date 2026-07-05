@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SessionStart hook for super-puper-powers plugin.
 # Adapted from obra/superpowers v6.1.1 (commit d884ae04), MIT.
-# Modifications: skill path and injection text renamed to SPP; Cursor/Copilot branches removed.
+# Modifications: skill path and injection text renamed to SPP; Cursor/Copilot branches removed;
+# detect a co-active upstream obra/superpowers and append an orchestrator-precedence note.
 
 set -euo pipefail
 
@@ -9,6 +10,33 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 content=$(cat "${PLUGIN_ROOT}/skills/using-super-puper-powers/SKILL.md" 2>&1 || echo "Error reading using-super-puper-powers skill")
+
+# If the upstream obra/superpowers plugin is ALSO enabled, its SessionStart hook injects a
+# second orchestrator (using-superpowers). We can't disable another plugin's hook, but we can
+# disambiguate: append a precedence note so pipeline work isn't driven by the wrong orchestrator.
+# Degrades silently if settings/python are unavailable — never breaks the hook.
+settings_file="${HOME}/.claude/settings.json"
+if [ -f "$settings_file" ] && command -v python3 >/dev/null 2>&1; then
+    upstream_active=$(python3 - "$settings_file" <<'PY' 2>/dev/null || printf 'no'
+import json, sys
+try:
+    enabled = json.load(open(sys.argv[1])).get("enabledPlugins", {})
+    # a co-active UPSTREAM install: plugin name (before '@') is exactly "superpowers",
+    # not our "super-puper-powers", and its value is truthy.
+    hit = any(v and k.split("@", 1)[0] == "superpowers" for k, v in enabled.items())
+    print("yes" if hit else "no")
+except Exception:
+    print("no")
+PY
+)
+    if [ "$upstream_active" = "yes" ]; then
+        content="${content}
+
+---
+
+Coexistence note: the obra/superpowers plugin is also enabled in this session, so a second orchestrator (using-superpowers) has been injected too. For SPP pipeline work THIS orchestrator (super-puper-powers:using-super-puper-powers) takes precedence — do not use using-superpowers or its skills to drive pipeline phases. To also cut the duplicated always-on context, disable superpowers while running the pipeline (see the SPP README)."
+    fi
+fi
 
 # Escape string for JSON embedding using bash parameter substitution.
 escape_for_json() {
