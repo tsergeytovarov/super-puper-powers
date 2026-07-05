@@ -4,7 +4,7 @@ description: Use when executing implementation plans with independent tasks in t
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: attribution header; skill links renamed to SPP names; inline-execution alternative removed; SDD workdir renamed to .spp/sdd; example plan paths updated to docs/spp/05-plans
+> Modifications: attribution header; skill links renamed to SPP names; inline-execution alternative removed; SDD workdir renamed to .spp/sdd; example plan paths updated to docs/spp/05-plans; stray superpowers/ example path renamed to spp
 
 # Subagent-Driven Development
 
@@ -278,7 +278,7 @@ Task 1: Hook installation script
 
 Implementer: "Before I begin - should the hook be installed at user or system level?"
 
-You: "User level (~/.config/superpowers/hooks/)"
+You: "User level (~/.config/spp/hooks/)"
 
 Implementer: "Got it. Implementing now..."
 [Later] Implementer:

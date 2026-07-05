@@ -810,8 +810,9 @@ grep -rniE 'executing[- ]plans' skills/ | grep -v 'Vendored from' | grep -v 'Mod
 grep -rn '\.superpowers/' skills/ | grep -v 'Modifications:' ; echo "s3=$?"
 grep -rn 'docs/superpowers' skills/ | grep -v 'Modifications:' ; echo "s4=$?"
 grep -rniE '\b(writing-plans|brainstorming|using-superpowers)\b' skills/ | grep -viE 'plan-writing|spec-writing|super-puper-powers' | grep -v 'Vendored from' | grep -v 'Modifications:' ; echo "s5=$?"
+grep -rniE '\bsuperpowers\b' skills/ | grep -viE 'super-puper-powers|obra/superpowers' | grep -v 'Vendored from' | grep -v 'Modifications:' ; echo "s6=$?"
 ```
-Expected: все пять пусто, `s1=1 s2=1 s3=1 s4=1 s5=1`.
+Expected: все шесть пусто, `s1=1 s2=1 s3=1 s4=1 s5=1 s6=1`.
 
 - [ ] **Step 2: frontmatter-чек всех SKILL.md (§7.10)**
 
