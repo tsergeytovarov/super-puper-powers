@@ -1,6 +1,6 @@
 ---
 name: stack-selection
-description: Use when MVP scope is approved (phase 2 approved in docs/spp/pipeline-state.md) - picks the tech stack from 2-3 options judged by agent maintainability, running cost and time to MVP, explained in owner consequences
+description: Use when MVP scope is approved (phase 2 approved in docs/spp/pipeline-state.md) OR when the user directly asks to pick a tech stack outside a running pipeline (e.g. "pick a tech stack for this") - picks the tech stack from 2-3 options judged by agent maintainability, running cost and time to MVP, explained in owner consequences
 ---
 
 ## Overview
@@ -19,6 +19,16 @@ Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 
 - `docs/spp/00-idea-brief.md` — budget, timeline, and jurisdiction constraints from the original brief.
 
 On starting work, write `current_phase: 3`, `phase_status: in_progress`.
+
+### 0.5. Standalone use (no pipeline running)
+
+If there is no `docs/spp/pipeline-state.md` at phase 2 approved, and the user asked directly to pick a stack (e.g. "pick a tech stack for this"): do not demand an approved phase 2 or an MVP scope document that was never written. Skip reading and writing `pipeline-state.md` entirely.
+
+Gather the minimum directly from the user instead of the missing artifacts: what the product actually does end to end (enough to stand in for the walking skeleton), and budget, timeline, and jurisdiction constraints. If `02-mvp-scope.md` or `00-idea-brief.md` exist on disk even without a pipeline running, read and use them normally instead of re-asking.
+
+Run steps 1 through 4 as normal against that context, and still write the artifact to `docs/spp/03-stack.md` — it's a real, reusable document regardless of how it was triggered. Still run the gate in step 5 (the owner still needs to pick), but do not write `current_phase`/`phase_status` transitions and do not log to a Decisions log that belongs to a pipeline that isn't running.
+
+After the gate, do not hand off automatically per step 6. Instead, mention that this stack choice can continue into the full pipeline if the user wants — name `super-puper-powers:spec-writing` as the next skill, as an option, not a mandate.
 
 ### 1. Determine the product type
 
@@ -74,3 +84,4 @@ State the next step explicitly: **"Next: the `super-puper-powers:spec-writing` s
 | "I'll let the user choose between the frameworks by name and let them ask if they want details" | The gate must present consequences up front — cost, update effort, time to MVP — not names the user then has to interrogate. A gate that requires the user to ask "what does that mean for me" has already failed at being product-language. |
 | "Two options is basically the same as three, I'll just present the one I'd pick plus a strawman" | The process calls for genuine 2-3 candidates evaluated on the same criteria, not a preferred pick and a deliberately weak foil. A strawman option isn't a real trade-off and gives the user a false choice. |
 | "This 'no-build' stack is simple, I'll skip naming a test runner since there isn't one" | A missing runner still has to be stated as a deliberate, justified answer in the artifact, not silently omitted. Otherwise the stack drifts into "nothing to test with" and the conflict with TDD in later phases surfaces mid-implementation instead of now, when it's still cheap to pick a different stack. |
+| "The user just wants a stack picked but there's no approved MVP scope in pipeline-state.md, so I need that first" | Standalone invocation doesn't require an upstream MVP scope to exist as a pipeline artifact. Ask the user directly what the product does end to end, plus budget/timeline/jurisdiction, and proceed — don't block a one-off request on a phase that was never run. |

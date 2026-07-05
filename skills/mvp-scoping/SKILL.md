@@ -1,6 +1,6 @@
 ---
 name: mvp-scoping
-description: Use when discovery is approved with a go decision (phase 1 approved in docs/spp/pipeline-state.md) - turns the brief and discovery report into a prioritized MVP scope built around a walking skeleton scenario
+description: Use when discovery is approved with a go decision (phase 1 approved in docs/spp/pipeline-state.md) OR when the user directly asks to draft an MVP scope outside a running pipeline (e.g. "draft an MVP scope / what should the first version do") - turns the brief and discovery report into a prioritized MVP scope built around a walking skeleton scenario
 ---
 
 ## Overview
@@ -21,6 +21,16 @@ Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 
 Hold on to the differentiator claim, its verdict, and the idea killers specifically — step 2 checks the must list against all three, not just against the brief in general.
 
 On starting work, write `current_phase: 2`, `phase_status: in_progress`.
+
+### 0.5. Standalone use (no pipeline running)
+
+If there is no `docs/spp/pipeline-state.md` at phase 1 approved, and the user asked directly for an MVP scope (e.g. "draft an MVP scope" or "what should the first version do"): do not demand an approved phase 1 or a discovery report that was never run. Skip reading and writing `pipeline-state.md` entirely.
+
+Gather the minimum directly from the user instead of the missing artifacts: the problem, the audience, and the differentiation answer normally found in `00-idea-brief.md`; and, if a discovery pass was never done, ask plainly whether one exists or whether to proceed without it — note in the artifact that no discovery report backed this scope, so prioritization calls that would otherwise lean on a differentiator verdict or idea killers are made without that check. If either document does exist on disk even without a pipeline running, read and use it normally.
+
+Run steps 1 through 6 as normal against that context, and still write the artifact to `docs/spp/02-mvp-scope.md` — it's a real, reusable document regardless of how it was triggered. Still run the gate in step 7 (the scenario approval is the right check standalone too), but do not write `current_phase`/`phase_status` transitions and do not log to a Decisions log that belongs to a pipeline that isn't running.
+
+After the gate, do not hand off automatically per step 8. Instead, mention that this scope can continue into the full pipeline if the user wants — name `super-puper-powers:stack-selection` as the next skill, as an option, not a mandate.
 
 ### 1. Build the full feature list
 
@@ -102,3 +112,4 @@ State the next step explicitly: **"Next: the `super-puper-powers:stack-selection
 | "Discovery's verdict was 'weak,' but the item is still sitting in must, so we're fine" | Being in must answers a scoping question, not a competitive one. A `weak`/`killed` verdict means the edge itself is thin regardless of which bucket the item sits in — leaving it in must without surfacing the verdict just ignores what discovery found. |
 | "The differentiator verdict was 'killed,' I'll quietly move it to later so it stops being the headline risk" | Moving a `killed`-verdict item to later reframes a competitive dead-end as a scheduling choice. It's not a scoping fix — it needs its own explicit owner call at the gate, not a bucket change that buries it. |
 | "Discovery already said 'weak' in its report, mvp-scoping doesn't need to re-raise it" | Discovery stating the verdict and mvp-scoping surfacing it as an explicit owner call at this gate are different obligations. A verdict mentioned once in a prior artifact is not the same as a decision logged at this phase's gate. |
+| "The user asked for an MVP scope directly but there's no discovery report on disk, so I can't proceed" | Standalone invocation doesn't require an upstream discovery report to exist. Ask the user directly for the problem, audience, and differentiator, note plainly that no discovery backed this scope, and proceed — don't block a one-off request on a phase that was never run. |

@@ -1,6 +1,6 @@
 ---
 name: product-discovery
-description: Use when the idea brief is approved (phase 0 approved in docs/spp/pipeline-state.md) - researches competitors, legal risks, market and feasibility before any scoping, with an explicit right to stop the project
+description: Use when the idea brief is approved (phase 0 approved in docs/spp/pipeline-state.md) OR when the user directly asks to check an idea for competitors, legal risk, or whether it is worth building, outside a running pipeline (e.g. "check this idea for competitors / legal risk / whether it is worth building") - researches competitors, legal risks, market and feasibility before any scoping, with an explicit right to stop the project
 ---
 
 ## Overview
@@ -20,6 +20,14 @@ Some environments (sandboxed, headless) give a research subagent no web-search t
 Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 0` and `phase_status: approved` — the idea brief is confirmed and nothing later has started. Read `docs/spp/00-idea-brief.md` for the brief content, including the two jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) — the legal-risk research depends on both.
 
 On starting work, write `current_phase: 1`, `phase_status: in_progress`.
+
+### 0.5. Standalone use (no pipeline running)
+
+If there is no `docs/spp/pipeline-state.md`, or it exists but isn't at phase 0 approved, and the user asked directly for a discovery pass on an idea (e.g. "check this idea for competitors" or "is this worth building"): do not demand an approved phase 0 or an idea brief that doesn't exist. Instead, gather the minimum directly from the user in this message exchange — what the idea is, who it's for, and both jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`), since legal-risk research needs both. Skip reading or writing `pipeline-state.md` entirely; don't fabricate a state file you don't own.
+
+Run steps 1 through 6 as normal against that gathered context, and still write the artifact to `docs/spp/01-discovery-report.md` — it's a real, reusable document regardless of how it was triggered. Still run the gate in step 7 (go/pivot/stop is the right shape for this decision even standalone), but do not write `current_phase`/`phase_status` transitions and do not log to a Decisions log that belongs to a pipeline that isn't running.
+
+After the gate, do not hand off automatically per step 8. Instead, mention that this research can continue into the full pipeline if the user wants — name `super-puper-powers:mvp-scoping` as the next skill, as an option, not a mandate.
 
 ### 1. Ask: quick or deep
 
@@ -127,3 +135,4 @@ On pivot or stop, there is no "next skill" to hand off to in this phase — pivo
 | "No web tools for this subagent — I'll answer confidently from what I know and skip the caveat" | Model-knowledge answers are legal, but every conclusion they produce must be marked "not verified against primary sources." Dropping the mark makes an unverified guess look like a researched finding. |
 | "I don't have a real source for this claim but I need one to look credible, I'll cite a plausible-sounding one" | Never invent a URL or source name. No web access means no citations — a fabricated one is worse than an honest "not verified" mark, because it actively misleads whoever checks it. |
 | "Quick mode already says market/demand wasn't researched, that covers the go-decision risk too" | The 'not researched' caveat describes what didn't happen; the mandatory warning at the gate names the consequence for the decision itself. Quick mode requires both — one doesn't substitute for the other. |
+| "The user just asked me to check this idea, but there's no approved phase 0 in pipeline-state.md, so I can't run" | Standalone invocation doesn't need an approved pipeline phase. Gather the idea and jurisdiction fields directly from the user and run the research — don't block a one-off request on an artifact that was never going to exist. |

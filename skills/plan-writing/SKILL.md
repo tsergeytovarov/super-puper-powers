@@ -1,10 +1,10 @@
 ---
 name: plan-writing
-description: Use when specs are approved (phase 4 approved in docs/spp/pipeline-state.md) - writes implementation plans as bite-sized tasks to docs/spp/05-plans/ for subagent-driven execution
+description: Use when specs are approved (phase 4 approved in docs/spp/pipeline-state.md) OR when the user directly asks to turn a spec into an implementation plan outside a running pipeline (e.g. "turn this spec into an implementation plan") - writes implementation plans as bite-sized tasks to docs/spp/05-plans/ for subagent-driven execution
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream planning skill; plans path docs/spp/05-plans/; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option; body restructured to the fixed Overview/Process/Red Flags skeleton; reframed self-review as a placeholder-and-coverage scan rather than a logic-catching step; added a plan-size estimate step that recommends pipeline_profile (full/lite) for the orchestrator's phase 6; added a per-task verification-type field (unit/acceptance/manual) to the task template; added explicit git-write degradation for the per-task commit step
+> Modifications: reworked from the upstream planning skill; plans path docs/spp/05-plans/; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option; body restructured to the fixed Overview/Process/Red Flags skeleton; reframed self-review as a placeholder-and-coverage scan rather than a logic-catching step; added a plan-size estimate step that recommends pipeline_profile (full/lite) for the orchestrator's phase 6; added a per-task verification-type field (unit/acceptance/manual) to the task template; added explicit git-write degradation for the per-task commit step; standalone invocation supported outside the pipeline
 
 ## Overview
 
@@ -25,6 +25,16 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ### 1. Scope check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during spec-writing. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+
+### 1.5. Standalone use (no pipeline running)
+
+If there is no `docs/spp/pipeline-state.md` at phase 4 approved, and the user asked directly to turn a spec into a plan (e.g. "turn this spec into an implementation plan"): do not demand an approved phase 4 or a pipeline-tracked spec. Skip reading and writing `pipeline-state.md` entirely, including `subproject_order` — if there are multiple specs and no pipeline state to order them, ask the user directly which one to build first.
+
+Take the spec from wherever the user points — a file on disk, or a spec they paste or describe directly — instead of insisting it live under `docs/spp/04-specs/`. If it does live there, read it normally. Everything else in this skill runs unchanged: map the file structure, right-size the tasks, write the plan header and each task exactly as steps 2 through 5 describe, and run self-review and plan-review exactly as steps 7 and 8 describe — none of that rigor is pipeline-specific.
+
+Still write the plan to `docs/spp/05-plans/YYYY-MM-DD-<feature-name>.md` per the skill's default — it's a real, reusable document regardless of how it was triggered. Do not write `current_phase`/`phase_status` transitions and do not log to a Decisions log that belongs to a pipeline that isn't running.
+
+After plan-review comes back clean, the execution handoff in step 9 still applies as written — subagent-driven-development is the right way to execute any plan, standalone or not. Just don't frame it as advancing a pipeline phase if none is running.
 
 ### 2. Map the file structure
 
@@ -188,3 +198,4 @@ On confirmation:
 | "Git is available for some tasks but I skipped a commit anyway to save time" | Commit discipline is the default whenever git-write is available — the degradation path only applies when git-write genuinely isn't there, not as a shortcut. |
 | "Task N is basically like Task M, I'll just say 'same as Task N'" | "Similar to Task N" is a banned placeholder — the engineer may read tasks out of order and needs the actual code repeated, not a cross-reference. |
 | "The spec doesn't say how to handle this edge case, I'll write 'add appropriate error handling'" | That's a plan failure, not a placeholder-safe shorthand. Every step needs the actual content an engineer would need — go back to the spec (or spec-review) if the behavior genuinely isn't defined yet. |
+| "The user handed me a spec directly but there's no approved phase 4 in pipeline-state.md, so I can't plan it" | Standalone invocation doesn't require the spec to be pipeline-tracked. Take the spec from wherever the user points, run the same file-mapping, task-writing, self-review, and plan-review rigor, and skip only the pipeline-state bookkeeping — don't block a one-off request on a phase that was never run. |

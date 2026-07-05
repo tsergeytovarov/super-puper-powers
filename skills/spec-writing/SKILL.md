@@ -1,10 +1,10 @@
 ---
 name: spec-writing
-description: Use when stack is approved (phase 3 approved in docs/spp/pipeline-state.md) and specs are not yet written - designs the product through product-behavior questions only and writes implementation specs to docs/spp/04-specs/
+description: Use when stack is approved (phase 3 approved in docs/spp/pipeline-state.md) and specs are not yet written, OR when the user directly asks to write a spec outside a running pipeline (e.g. "write a spec for this feature/product") - designs the product through product-behavior questions only and writes implementation specs to docs/spp/04-specs/
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream design-dialogue skill; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped; body restructured to the fixed Overview/Process/Red Flags skeleton; added a mandatory domain decisions checklist the author fills before self-review; reframed self-review as a placeholder-and-coverage scan rather than a logic-catching step; added explicit git-write degradation for the design-doc commit
+> Modifications: reworked from the upstream design-dialogue skill; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped; body restructured to the fixed Overview/Process/Red Flags skeleton; added a mandatory domain decisions checklist the author fills before self-review; reframed self-review as a placeholder-and-coverage scan rather than a logic-catching step; added explicit git-write degradation for the design-doc commit; standalone invocation supported outside the pipeline
 
 <HARD-GATE>
 Do NOT invoke any implementation skill (including plan-writing), write any code, scaffold any project, or take any implementation action until the user has approved the product-behavior summary (docs/spp/04-specs/summary-for-review.md). The user approves product behavior — scenarios, UX, copy — never architecture or design internals. This applies to EVERY project regardless of perceived simplicity.
@@ -29,6 +29,16 @@ You MUST create a task for each of the numbered steps below and complete them in
 ### 1. Explore project context
 
 Read `docs/spp/pipeline-state.md`, `docs/spp/02-mvp-scope.md`, and `docs/spp/03-stack.md` before asking anything, plus relevant project files/docs/recent commits. These carry the approved scope, scenarios, and stack — do not re-ask what they already answer.
+
+### 1.5. Standalone use (no pipeline running)
+
+If there is no `docs/spp/pipeline-state.md` at phase 3 approved, and the user asked directly for a spec (e.g. "write a spec for this feature/product"): do not demand an approved phase 3, an MVP scope, or a stack document that were never produced. Skip reading and writing `pipeline-state.md` entirely.
+
+Gather the minimum directly from the user instead of the missing artifacts: what the feature or product actually does, and what it's built with (language, framework, notable constraints) — enough to stand in for `02-mvp-scope.md` and `03-stack.md`. If either document exists on disk even without a pipeline running, read and use it normally instead of re-asking. Everything else in this skill runs unchanged: the HARD-GATE above still applies in full — no implementation action before the product-behavior summary is approved — and the design-dialogue steps below (2 through 9) are exactly as valuable standalone as they are inside the pipeline.
+
+Still write the design doc to `docs/spp/04-specs/YYYY-MM-DD-<topic>-design.md` and the summary to `docs/spp/04-specs/summary-for-review.md` per steps 6 and 10 — these are real, reusable documents regardless of how the skill was triggered. Do not write `current_phase`/`phase_status` transitions and do not log to a Decisions log that belongs to a pipeline that isn't running.
+
+After the user approves the summary, do not invoke `super-puper-powers:plan-writing` automatically per step 11. Instead, mention that this spec can continue into the full pipeline if the user wants — name `super-puper-powers:plan-writing` as the next skill, as an option, not a mandate.
 
 ### 2. Ask clarifying questions (product behavior only)
 
@@ -120,3 +130,4 @@ Invoke `super-puper-powers:plan-writing` to create a detailed implementation pla
 | "The commit failed, I should stop and fix the git environment before continuing" | Committing the design doc is not a blocking step of this phase. Record the note and continue; the commit can happen later (e.g. at release-fixation) if git-write becomes available. |
 | "The user is technical, I'll show them the architecture section for sign-off" | Gates in this phase are product behavior only, regardless of the user's technical background — architecture sign-off from someone not building the thing is meaningless approval theater. |
 | "I'll present the whole spec for approval, it's more thorough than a summary" | The user approves `summary-for-review.md` in product language, not the full spec. Asking them to read spec language defeats the purpose of the summary gate. |
+| "The user just asked for a spec but there's no approved stack in pipeline-state.md, so I can't start" | Standalone invocation doesn't require an upstream MVP scope or stack document to exist. Ask the user directly what the feature does and what it's built with, then run the design dialogue and the HARD-GATE exactly as written — don't block a one-off request on phases that were never run. |
