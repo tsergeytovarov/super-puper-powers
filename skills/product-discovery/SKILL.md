@@ -46,7 +46,7 @@ This applies per-subagent in deep mode (some subagents may have web tools while 
 
 Dispatch four subagents in a single response so they run concurrently (the `dispatching-parallel-agents` pattern). None of them inherits this session's context — each gets a constructed brief built from `00-idea-brief.md`, containing only what that subagent needs:
 
-1. **Competitors and alternatives** — who already solves this problem, what's weak about their solutions, where the gap or niche actually is.
+1. **Competitors and alternatives** — who already solves this problem, what's weak about their solutions, where the gap or niche actually is. This subagent also owns the **differentiator verdict** (see step 3.5): it must check the brief's claimed differentiator against what competitors actually do, not just survey the competitive landscape in general.
 2. **Legal risks under the jurisdiction from the brief** — personal data handling, licensing, payments, age restrictions. Use both jurisdiction fields: rules can differ between where the users are and where the author is, and both apply.
 3. **Market and demand** — rough size, trends, evidence people would actually pay or switch.
 4. **Feasibility** — buildable by a solo agent in the timeframe and budget from the brief; order-of-magnitude monthly running cost once live.
@@ -57,15 +57,27 @@ Each subagent prompt must stand alone: the relevant brief fields, the specific q
 
 Dispatch a single subagent covering:
 
-- Item 1 (competitors and alternatives) — same depth as deep mode.
+- Item 1 (competitors and alternatives) — same depth as deep mode, including the differentiator verdict from step 3.5.
 - Item 2 (legal risks) — obvious stoppers only, not an exhaustive survey.
 - Item 4 (feasibility) — a rough pass, not order-of-magnitude precision.
 
 Market and demand (item 3) is skipped entirely in quick mode — say so plainly in the report rather than silently omitting it.
 
+### 3.5. Evaluate the claimed differentiator
+
+The brief's "how it differs" answer (`00-idea-brief.md`) is a claim, not a fact. The competitor research — subagent 1 in deep mode, the single subagent's competitor pass in quick mode — must explicitly test that claim against what competitors actually do, and land one of three verdicts:
+
+- **Survives** — the differentiator is real and defensible; competitors don't cover it, or cover it meaningfully worse.
+- **Weak** — competitors mostly already cover it; what's left is a thin edge, not a real gap.
+- **Killed** — competitors already do exactly this; it is not actually a differentiator.
+
+This is a distinct instruction to the subagent, not something that falls out of a general competitor survey — a subagent asked only to "research competitors" will describe the landscape without ever comparing it back to the specific claim in the brief. Tell it explicitly: state the brief's differentiator, then say which of the three verdicts it earns and why, citing what competitors actually do.
+
+A `weak` or `killed` verdict is not automatically an idea killer and does not by itself force a "no-go" recommendation in step 6 — plenty of products succeed without a durable moat. But it must be stated plainly, not folded into general competitor commentary where a reader could miss it, because `mvp-scoping` and the product owner both need this verdict to decide what happens next.
+
 ### 4. Synthesize
 
-Combine the subagent output(s) into a single report. Don't just concatenate — reconcile overlaps and contradictions between subagents yourself. If any subagent used the no-web-tools fallback from step 1.5, carry its "not verified against primary sources" marks through into the synthesized text on the specific claims they cover — synthesis must not smooth an unverified claim into a confident-sounding sentence that loses the mark.
+Combine the subagent output(s) into a single report. Don't just concatenate — reconcile overlaps and contradictions between subagents yourself. If any subagent used the no-web-tools fallback from step 1.5, carry its "not verified against primary sources" marks through into the synthesized text on the specific claims they cover — synthesis must not smooth an unverified claim into a confident-sounding sentence that loses the mark. Carry the differentiator verdict from step 3.5 through unchanged — synthesis reconciles competitive findings, but it does not soften "weak" or "killed" into vaguer language on the way into the report.
 
 ### 5. Adversarial check — deep mode only
 
@@ -78,6 +90,7 @@ In deep mode, dispatch one more subagent, separate from the four research subage
 Write `docs/spp/01-discovery-report.md`. Mandatory sections:
 
 - **Idea killers** — every legal, market, or competitive dealbreaker found, or an explicit "none found" if the research turned up nothing disqualifying. This section may not be omitted or left implicit.
+- **Differentiator verdict** — the brief's claimed differentiator, stated plainly, followed by the verdict from step 3.5: **survives**, **weak**, or **killed**, with the competitive reasoning behind it. Mandatory in both modes, same as idea killers — a `weak` or `killed` verdict is not itself a stopper, but it must be a named, unmissable element of the report, not a sentence buried inside general competitor commentary.
 - **Recommendation: go / pivot / no-go** — one of the three, with the reasoning that leads to it. "No-go" here is the report's recommendation going into the gate; the gate itself offers the user go / pivot / stop (below) — this section is what backs that gate's stop option, not a separate decision, so word it as the case *for* stopping, not a vague warning.
 - If any part of the report relied on the no-web-tools fallback (step 1.5): the "not verified against primary sources" mark on every affected claim, carried through from synthesis — not summarized away as a single footnote that loses which claims it covers.
 - If quick mode: a plain statement that no adversarial verification ran and market/demand wasn't researched.
@@ -107,6 +120,8 @@ On pivot or stop, there is no "next skill" to hand off to in this phase — pivo
 | "The recommendation is 'stop,' I should frame this gently since the pipeline is ending in failure" | Stop is not a failure. It's the phase working as designed — say plainly that it just saved the user months. Softening it into an apology misrepresents the outcome. |
 | "I'll just tell the research subagents about the idea from what I already know" | Subagents never inherit session context. Construct a precise brief for each from `00-idea-brief.md` — an assumed-context subagent researches the wrong thing or misses jurisdiction-specific detail. |
 | "Competitors and feasibility look fine, I'll skip writing an explicit 'Idea killers' section" | The section is mandatory even when empty. Write "none found" — an absent section reads as "not checked," not "checked, clean." |
+| "The competitor research covered the landscape, that's close enough to a differentiator verdict" | A general competitor survey and an explicit verdict on the brief's specific claim are different questions. Without the dedicated step 3.5 instruction, the subagent describes competitors without ever comparing them back to the brief's differentiation answer — the report ends up with competitor notes and no verdict at all. |
+| "The differentiator looks weak, but that's not an idea killer, so I won't call it out separately" | Weak/killed doesn't have to be a stopper to be mandatory to state. It's a named section regardless of severity — burying it inside general commentary is exactly how it failed to reach mvp-scoping before this check existed. |
 | "Legal risk only needs the users' jurisdiction, the author's country doesn't build the product" | Both jurisdiction fields apply — the author's country can impose its own licensing, tax, or data-handling obligations regardless of where users sit. Checking one and skipping the other leaves a real risk unresearched. |
 | "The gate is basically approve/reject, I can phrase it as ship-it-or-not on the tech" | Gate is go/pivot/stop in product terms — market and legal reality, not implementation. Framing it around code or architecture asks the user to evaluate something they can't. |
 | "No web tools for this subagent — I'll answer confidently from what I know and skip the caveat" | Model-knowledge answers are legal, but every conclusion they produce must be marked "not verified against primary sources." Dropping the mark makes an unverified guess look like a researched finding. |
