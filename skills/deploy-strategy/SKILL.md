@@ -22,7 +22,7 @@ Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 
 
 On starting work, write `current_phase: 8`, `phase_status: in_progress`.
 
-## Step 1 — choose the strategy
+Steps 1-3 below are **Step 1 — choose the strategy** (the phase's main value); steps 4-8 are **Step 2 — execute**.
 
 ### 1. Gather inputs
 
@@ -50,8 +50,6 @@ Present the options and ask the owner to pick one. This is a decision about mone
 
 - **On a pick:** write the chosen strategy to `deploy_target` in the state file, log the decision in the Decisions log (date, phase 8, the chosen deploy target, who picked it).
 - **On requested changes:** if the owner wants a trade-off explained differently, or their answer to step 1 (existing accounts, budget) changes, revise the options and re-ask.
-
-## Step 2 — execute
 
 ### 4. Follow the reference playbook for this product_type
 
