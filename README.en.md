@@ -519,8 +519,9 @@ Copyright (c) 2025 Jesse Vincent.
 
 ## Versions
 
-Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 0.4.0: the plugin build
-(0.1.0), refinements from two dogfooding runs of the pipeline (0.2.0), the differentiator verdict
-in discovery (0.3.0), auto-disambiguation for the orchestrator (0.3.1), and in 0.4.0 —
-positioning as a replacement for obra/superpowers, standalone invocation of phase skills, and
-Codex readiness.
+Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 1.0.0, the first stable
+release. Behind it: the plugin build (0.1.0), refinements from two dogfooding runs of the pipeline
+(0.2.0), the differentiator verdict in discovery (0.3.0), auto-disambiguation for the orchestrator
+(0.3.1), positioning as a replacement for obra/superpowers, standalone invocation of phase skills,
+and Codex readiness (0.4.0), and in 1.0.0 — a one-command Codex install script and the skill
+public API plus pipeline state declared stable.
