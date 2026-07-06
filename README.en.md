@@ -452,9 +452,16 @@ under OpenAI Codex, not just Claude Code. The skills live in `./skills/`, and Co
 from there.
 
 Publishing to the official Codex plugin marketplace (openai/plugins) is a separate external
-process, not done yet. For local use, wire the skills in as Codex personal skills: symlink every
-`skills/<name>` folder into `~/.agents/skills/<name>` (a symlink, so the repository stays the
-source of truth), then restart Codex.
+process, not done yet. For local use there's a script — it wires the skills in as Codex personal
+skills via symlinks, so the repository stays the source of truth:
+
+```
+./scripts/install-codex.sh            # install/refresh symlinks in ~/.agents/skills
+./scripts/install-codex.sh --uninstall # remove the symlinks the script created
+```
+
+The script is idempotent, never touches other folders in `~/.agents/skills`, and on uninstall
+removes only its own symlinks. Restart Codex after installing.
 
 One thing about orchestration: Codex has no SessionStart hook, so the orchestrator doesn't get
 injected on its own. Launch the pipeline explicitly — describe the idea and invoke the
