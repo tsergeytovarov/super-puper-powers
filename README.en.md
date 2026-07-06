@@ -42,9 +42,10 @@ Five principles. Breaking any one of them is a defect, not a style choice.
    reasoning. The human is only asked what they can actually answer.
 3. **Every phase produces a document and ends in a gate.** Six months later it's clear
    why the product is built the way it is.
-4. **The pipeline is resumable.** State lives in `docs/spp/pipeline-state.md`. Any session
-   starts by reading this file and continues from where things stopped. Interrupting
-   work and coming back tomorrow is the normal case, not an incident.
+4. **The pipeline is resumable.** Cross-chat memory lives in an optional journal,
+   `docs/spp/pipeline-state.md` — what the project is, what's been done, what was decided. A new
+   session reads it for context, not as enforcing state: the journal gates nothing and forces no
+   next phase. Interrupting work and coming back tomorrow is the normal case, not an incident.
 5. **The right to say no-go.** Discovery can legitimately kill the project. Stopping on an idea
    that won't fly is a phase win, not a failure — months of work saved.
 
@@ -66,8 +67,9 @@ missing:
   context (upstream reviews code, but not the spec or the plan — inconsistent).
 - **After code** — release fixation, choosing and executing a deploy strategy, operations with
   a feedback loop.
-- **An orchestrator and a state machine** — turn disparate skills into a resumable pipeline
-  with gates phrased in product language.
+- **A dispatcher-orchestrator and a journal** — route work by context and tie disparate skills
+  into a pipeline with gates phrased in product language; the phase order is a recommendation,
+  not enforced.
 
 ## How the pipeline works
 
@@ -86,17 +88,27 @@ Ten phases. Each one: input → agent's work → artifact document → gate with
 | 8 | deploy-strategy | `08-deploy-runbook.md` | "The product is live at X — do you accept it?" |
 | 9 | post-release | `09-operations.md` | final: operations handbook accepted |
 
-The pipeline state (`docs/spp/pipeline-state.md`) is a YAML with the current phase number, gate
-status, artifact language, jurisdiction, chosen stack, and decisions made along the way. Phase
-N+1 doesn't start until phase N's gate is confirmed. The orchestrator reads this file at the
-start of every session and continues — so the pipeline survives a restart, a context
-compaction, and a week-long pause.
+The 0→9 phase order is a recommended route, not a rigid sequence. The orchestrator is a
+dispatcher: it routes by the context of the request (like upstream `using-superpowers`) rather
+than marching the person through phases. Any skill can be invoked directly by name or request at
+any time; there is no "phase N+1 doesn't start until phase N's gate is confirmed" rule. Each
+phase skill ends by suggesting the next logical step and offering to start it in a fresh chat —
+the person drives the transition, not automation (the one exception is plan-writing, which hands
+off straight into subagent-driven-development in the same session).
+
+The journal `docs/spp/pipeline-state.md` is optional: it's cross-chat memory and a decisions log
+(what the project is, what's been done, jurisdiction, chosen stack), not a state machine. It
+blocks no skill. At the start of a session the orchestrator reads it as context and reminds you
+where you left off — but whether to continue from that phase or invoke something else is your
+call. So the pipeline survives a restart, a context compaction, and a week-long pause.
 
 ## What each phase looks like from your side
 
 What happens at each step and what's actually needed from you — a person with no developer
 skills. The technical breakdown of each skill is in the next section; this one is the
-practical angle.
+practical angle. The order below is recommended: any skill can be invoked directly at any time,
+and each phase ends by suggesting the next one and offering to open it in a fresh chat (except
+the handoff to implementation — that runs on without a pause).
 
 **Phase 0 — idea-intake.** You describe the idea in a couple of sentences. Then the agent asks
 questions one at a time: what problem are we solving, for whom, how is it different, budget,
@@ -158,19 +170,22 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
 
 ### Orchestration
 
-- **using-super-puper-powers** — reads `pipeline-state.md`, announces the current phase, and
-  launches the right skill. Owns the state machine (phase N+1 doesn't start without an approved
-  gate for phase N), the gate language (product only, never diff or architecture), the phase 6
-  gate, and the choice of lite/full mode for phase 6 based on the estimate from plan-writing.
+- **using-super-puper-powers** — a dispatcher that routes by the context of the request (like
+  upstream `using-superpowers`) rather than marching the person through phases. The 0→9 phase
+  order is a recommendation to it, not enforcement: any skill is invoked directly regardless of
+  position in the map. Owns the gate language (product only, never diff or architecture), its own
+  phase 6 safety checks (which read artifacts on disk, not journal fields), and the choice of
+  lite/full mode for phase 6 based on the estimate from plan-writing. It reads the
+  `pipeline-state.md` journal as memory, not as an access switch.
   - *Trigger:* in Claude Code — automatically, via the `SessionStart` hook at the start of every
     session. Codex has no hook — the skill is invoked by direct reference at the start, or to
     resume the pipeline.
   - *Standalone:* this isn't a phase or a step in someone else's chain — it's the dispatcher
     that decides which skill to run. It has no separate "standalone mode" because it is itself
     the entry point into any pipeline work session.
-  - *In the chain:* consumes and passes nothing as a phase — reads the state before every
-    decision and routes into idea-intake, into the currently active phase, or into
-    release-fixation after the phase 6 gate.
+  - *In the chain:* consumes and passes nothing as a phase — at start it reads the journal as
+    context (if one exists) and routes by the request: into idea-intake, into the named phase
+    skill directly, or into release-fixation after the phase 6 gate.
 
 ### Phases 0–3: from idea to stack (original skills)
 
@@ -193,9 +208,9 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
   subagents plus fact-checking). A mandatory "idea killers" section and an explicit verdict on
   the differentiator — survived / weak / killed by competitors. The only phase where stopping
   is a normal outcome.
-  - *Trigger:* automatically at the phase 0 gate (`current_phase: 0`, `phase_status: approved`),
-    OR by a direct request like "check this idea for competitors / legal risks / whether it's
-    worth building" outside a running pipeline.
+  - *Trigger:* by its own standalone trigger — a direct request like "check this idea for
+    competitors / legal risks / whether it's worth building", and also as the recommended next
+    step after phase 0 (idea-intake suggests it at the end but doesn't invoke it).
   - *Standalone:* yes. Without `pipeline-state.md`, gathers the problem, the audience, and both
     jurisdictions right in the conversation, writes `01-discovery-report.md` as a standalone
     document, the go/pivot/stop gate works the same way but doesn't touch state or the Decisions
@@ -209,8 +224,9 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
   explicit "what's not in the MVP" section. The gate approves the scenario list, not the
   features. Checks that the differentiator made it into must, and raises a weak discovery
   verdict as a separate question to the owner.
-  - *Trigger:* automatically at the phase 1 gate with a go decision, OR by a direct request like
-    "draft an MVP scope / what should the first version do" outside the pipeline.
+  - *Trigger:* by its own standalone trigger — a direct request like "draft an MVP scope / what
+    should the first version do", and also as the recommended next step after a go decision in
+    discovery (which suggests it at the end but doesn't invoke it).
   - *Standalone:* yes. Without an approved phase 1, takes the problem, the audience, and the
     differentiation answer directly from the user; if there's no discovery report at all,
     explicitly notes in the artifact that prioritization happened without a competitor and
@@ -224,8 +240,9 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
   agent to fix than something exotic), then operating cost, speed to MVP, deploy compatibility.
   Frames trade-offs as consequences for the owner ("free hosting, one-command updates" versus
   "more flexible, but 20 dollars a month"), not framework properties.
-  - *Trigger:* automatically at the phase 2 gate, OR by a direct request like "pick a stack for
-    this" outside the pipeline.
+  - *Trigger:* by its own standalone trigger — a direct request like "pick a stack for this",
+    and also as the recommended next step after phase 2 (mvp-scoping suggests it at the end but
+    doesn't invoke it).
   - *Standalone:* yes. Without an approved MVP scope, takes from the user what the product does
     as an end-to-end scenario, plus budget/timeline/jurisdiction — and runs the same 2–3-option
     choice. Doesn't touch state.
@@ -239,16 +256,18 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
   product behavior (scenarios, copy, edge cases); the agent decides architecture and data model
   itself and records it in the spec with reasoning. Gate — a product summary, no need to read
   the full spec.
-  - *Trigger:* automatically at the phase 3 gate, OR by a direct request like "write a spec for
-    this feature/product" outside the pipeline.
+  - *Trigger:* by its own standalone trigger — a direct request like "write a spec for this
+    feature/product", and also as the recommended next step after phase 3 (stack-selection
+    suggests it at the end but doesn't invoke it).
   - *Standalone:* yes. Without an approved phase 3, takes from the user what the feature does
     and what it's built on (language, framework, constraints), instead of reading
     `02-mvp-scope.md` and `03-stack.md`. The HARD-GATE ("not a line of code before the summary
     is approved") applies unchanged — it isn't relaxed even outside the pipeline.
   - *In the chain:* consumes `02-mvp-scope.md` and `03-stack.md`. Internally — a terminal chain
     of self-review → spec-review → (if there's more than one spec) cross-spec-review → product
-    summary → plan-writing. The user doesn't invoke spec-review and cross-spec-review directly —
-    they're internal steps of its own process.
+    summary → gate. The user doesn't invoke spec-review and cross-spec-review directly — they're
+    internal steps of its own process. After the gate it suggests plan-writing as the next step
+    in a fresh chat, but doesn't invoke it automatically.
 
 - **spec-review** — an independent check of the spec by a subagent with clean context (gets only
   the spec, the MVP scope, and the stack — not the session history). Looks for: uncovered
@@ -280,16 +299,19 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
   verification type (unit test / accept via demo / manual check) — TDD isn't forced where the
   stack can't support a unit test. Estimates the size of the plan and recommends a lighter mode
   for tiny ideas.
-  - *Trigger:* automatically at the phase 4 gate, OR by a direct request like "turn this spec
-    into an implementation plan" outside the pipeline.
+  - *Trigger:* by its own standalone trigger — a direct request like "turn this spec into an
+    implementation plan", and also as the recommended next step after phase 4 (spec-writing
+    suggests it at the end but doesn't invoke it).
   - *Standalone:* yes. Without an approved phase 4, takes the spec from wherever the user points
     — a file on disk, pasted text — instead of reading `docs/spp/04-specs/`. All the rigor
     (breaking into tasks, self-review, plan-review) runs unchanged; only state and the Decisions
     log aren't written.
   - *In the chain:* consumes the spec (and `subproject_order`, if there's more than one spec).
     Internally — self-review → plan-review → "N tasks, shall we start?" →
-    subagent-driven-development. Writes `pipeline_profile` (lite/full) to state — this decides
-    how phase 6 executes the plan.
+    subagent-driven-development. This is the one handoff that happens automatically in the same
+    session, not as a suggestion into a fresh chat: after "shall we start?" the build runs
+    continuously. Writes `pipeline_profile` (lite/full) to state — this decides how phase 6
+    executes the plan.
 
 - **plan-review** — an independent check of the plan by a subagent: is every spec requirement
   covered by a task, are names and signatures consistent across tasks, are there placeholders
@@ -371,9 +393,13 @@ themselves exactly the same way.
   discard it.
   - *Trigger:* by its own description-trigger — when implementation is complete and all tests
     pass; on the usual route this is the end of subagent-driven-development.
-  - *Standalone:* yes, outside SPP — but inside SPP it carries an SPP guard: don't finish the
-    branch until `docs/spp/06-acceptance-demo.md` is confirmed approved in state. This is the
-    only one of the nine vendored skills with a hard check specific to the SPP pipeline.
+  - *Standalone:* yes, outside SPP — but inside SPP the orchestrator intercepts its call with a
+    safety gate: before finishing the branch it machine-checks on disk that
+    `docs/spp/06-acceptance-demo.md` exists and records the demo as approved. If it doesn't, it
+    doesn't block silently — it plainly warns that the demo hasn't passed and the release is
+    risky, and requires an explicit "yes, proceed anyway" (unlike the phase 6 checkpoints, this
+    is a warning with the right to proceed, not an absolute stop). The check reads the file on
+    disk, not a journal field.
   - *In the chain:* sits at the end of subagent-driven-development, but the actual pipeline call
     doesn't come from there directly — release-fixation (phase 7) invokes it itself, wrapping
     the technical merge/PR/leave/discard menu so the owner never sees it.
@@ -382,11 +408,13 @@ themselves exactly the same way.
 review and before the acceptance demo, the orchestrator runs two checkpoints in order:
 `data-boundaries` (data storage boundaries — where things live, what can be exported) and
 `pre-show-audit` (risks before showing the product and minimal security). Each writes its own
-artifact and marks itself in state; checkpoint findings are fix-tasks, not a human gate. Only
-then does the orchestrator run the acceptance demo — brings the product up (dev server, package
-install, bot in test mode) and walks the owner through every must-scenario. Gate: "every
-scenario works in front of my eyes" — the only gate in phase 6 where the decision stays with
-the owner.
+artifact to disk (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`); checkpoint
+findings are fix-tasks, not a human gate. Both files must exist on disk before the demo starts —
+that's an absolute stop (`<HARD-GATE>`), and the orchestrator verifies it by opening the files,
+not via the journal. Only then does the orchestrator run the acceptance demo — brings the
+product up (dev server, package install, bot in test mode) and walks the owner through every
+must-scenario. Gate: "every scenario works in front of my eyes" — the only human gate in phase 6
+where the decision stays with the owner.
 
 ### Phases 7–9: release, deploy, operations (original skills)
 
@@ -394,11 +422,12 @@ the owner.
   agent chooses how), a semver version (first release — 0.1.0), a changelog in the owner's
   language (what the product can now do, not a list of commits), a git tag. Gate — "fixing
   version X?"
-  - *Trigger:* automatically at the phase 6 gate — when the orchestrator's acceptance demo is
-    confirmed approved in state.
-  - *Standalone:* no direct standalone trigger — this skill isn't part of the five phase skills
-    with a standalone branch from v0.4, since it isn't project work but the closing of an already
-    finished branch inside a specific pipeline.
+  - *Trigger:* by its own standalone trigger — a direct request like "fix a version / write
+    release notes / finish the branch", and also as the recommended next step after an approved
+    acceptance demo (the orchestrator hands control here, having checked on disk that
+    `docs/spp/06-acceptance-demo.md` is recorded as approved).
+  - *Standalone:* yes. Before finishing the branch, the skill self-checks on disk whether the
+    acceptance demo has passed; if not, it warns and asks for confirmation, but doesn't block.
   - *In the chain:* consumes `06-acceptance-demo.md` (approved). Internally invokes
     verification-before-completion and finishing-a-development-branch (with the wrapped menu —
     the agent picks merge/PR, not the owner). Passes `07-release-notes.md` to deploy-strategy.
@@ -408,10 +437,11 @@ the owner.
   for web apps, packages, or telegram bots. Invariants: secrets never in git, deploy is
   repeatable, a smoke test on production with evidence. Two gate modes: an actual deploy with
   verification, or "strategy chosen, deploy deferred."
-  - *Trigger:* automatically at the phase 7 gate — when the release version is fixed and
-    approved.
-  - *Standalone:* no direct standalone trigger — a deploy with no preceding fixed release from
-    the same chain doesn't make sense as the skill is currently written.
+  - *Trigger:* by its own standalone trigger — a direct request like "how/where do I deploy this
+    / write a deploy runbook", and also as the recommended next step after phase 7
+    (release-fixation suggests it at the end but doesn't invoke it).
+  - *Standalone:* yes. It self-checks on disk whether a release version is fixed; if not, it
+    warns and offers to fix it, but doesn't block.
   - *In the chain:* consumes `product_type`, `stack`, budget, and jurisdiction from state and the
     brief. Writes `deploy_status` (executed/deferred) to state — post-release later reads this
     field to decide whether to treat the product as live. Passes `08-deploy-runbook.md` to
@@ -421,10 +451,12 @@ the owner.
   new brief → back into the pipeline. The operations handbook is written for the owner in a
   stressful moment, not for an engineer ("if the bot goes silent — do A, B, then message the
   agent").
-  - *Trigger:* automatically at the phase 8 gate — when deploy is approved (in either of the
-    two modes).
-  - *Standalone:* no direct standalone trigger — this is the finale of a specific pipeline run,
-    it doesn't run outside that context.
+  - *Trigger:* by its own standalone trigger — a direct request like "set up monitoring / add a
+    feedback channel after release", and also as the recommended next step after phase 8
+    (deploy-strategy suggests it at the end but doesn't invoke it).
+  - *Standalone:* yes. Reads `deploy_status` from the journal (if one exists) to decide whether
+    to treat the product as live; on `deferred` it writes the handbook in a "once you deploy"
+    mode.
   - *In the chain:* consumes `deploy_status`, `deploy_target`, `product_type`,
     `08-deploy-runbook.md`. The last skill in the chain — doesn't hand off further, but closes
     `current_phase: done` and describes how new feedback re-enters the pipeline through
@@ -432,9 +464,9 @@ the owner.
 
 ### On-demand helpers
 
-Six standalone skills sit outside the state machine — they don't touch `pipeline-state.md` and
-aren't part of any phase. They're invoked by their own trigger when needed, usually around
-phase 6:
+Six standalone skills sit outside the recommended route — they never touch the
+`pipeline-state.md` journal and aren't part of any phase. They're invoked by their own trigger
+when needed, usually around phase 6:
 
 - **accessibility** — baseline a11y audit and fixes.
 - **mobile-version** — a responsive pass, design only.
@@ -466,9 +498,10 @@ The `@super-puper-powers-marketplace` suffix on `install` is required — Claude
 requires the form `plugin-name@marketplace-name`, there's no shorthand without it.
 
 After installing, open a new Claude Code session. The startup hook injects the orchestrator —
-describe your product idea, and the pipeline picks it up on its own. Or launch it explicitly with
-the `/spp` command: it reads `docs/spp/pipeline-state.md` and either continues the pipeline or
-offers to start at phase 0.
+describe your product idea, and it picks it up on its own. Or launch it explicitly with the
+`/spp` command: it routes by context — if a `docs/spp/pipeline-state.md` journal already exists
+it reads it as memory and reminds you where you left off, without forcing the next phase; any
+skill can be invoked directly by name.
 
 ## Install under Codex
 
