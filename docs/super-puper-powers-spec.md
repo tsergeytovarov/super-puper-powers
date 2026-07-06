@@ -108,6 +108,8 @@ current_phase: 0..9 | done
 phase_status: in_progress | gate_pending | approved | stopped
 phases_skipped: []            # номера фаз, пропущенных по явному решению пользователя (§5.0)
 pipeline_profile: full | lite | null   # церемония фазы 6; lite для крошечных планов (§5.8, §5.10)
+data_boundaries_checked: true | false | null   # чекпоинт фазы 6: границы данных проверены (§5.0)
+pre_show_audit_checked: true | false | null    # чекпоинт фазы 6: аудит перед показом пройден (§5.0)
 discovery_mode: quick | deep | null
 product_type: web | package | tg-bot | mixed | null
 stack: <утверждённый стек | null>
@@ -117,6 +119,7 @@ deploy_status: executed | deferred | null   # deferred = стратегия+runb
 ```
 
 - **`pipeline_profile`** (v0.2): `plan-writing` оценивает размер плана; если план ≤ 3 задач и суммарно ≤ ~150 строк — рекомендует `lite`. В `lite` фаза 6 использует облегчённый путь (один имплементер на план + одно финальное whole-branch ревью, без per-task fresh-субагента и per-task review); spec-review/plan-review сохраняются. Иначе `full`. Протокол lite описан в оркестраторе (§5.0), не в vendored SDD.
+- **`data_boundaries_checked` / `pre_show_audit_checked`**: два orchestrator-owned чекпоинта фазы 6 (§5.0), которые идут после финального whole-branch ревью и до acceptance demo. Оркестратор машинно проверяет оба поля перед демо: демо не стартует, пока оба не `true`. Находки чекпоинтов — задачи на фикс, а не человеческий гейт.
 - **`deploy_status`** (v0.2): `deploy-strategy` (§5.12) закрывает гейт в одном из режимов — `executed` (реальный деплой + прод-смоук с evidence) или `deferred` (стратегия выбрана, runbook готов, деплой отложен, live-evidence не требуется). При `deferred` `post-release` (§5.13) не считает продукт живым и пишет памятку в режиме «когда задеплоишь».
 
 Плюс секции: `## Decisions log` (дата, фаза, решение, кем принято) и `## Artifacts` (ссылки на файлы фаз). Каждый гейт добавляет запись в Decisions log.
@@ -257,6 +260,8 @@ deploy_status: executed | deferred | null   # deferred = стратегия+runb
 5. Замена остаточных упоминаний бренда «Superpowers», не покрытых п.2 и п.4: голое слово-бренд в прозе → «Super-Puper-Powers»; произвольный сегмент пути `superpowers/` в примерах (не `.superpowers/` и не `docs/superpowers/`) → SPP-эквивалент. Цитата источника в шапке атрибуции (`obra/superpowers`, §6) и имя файла `LICENSE.superpowers` не трогаются.
 
 **Дополнение к фазе 6 (в оркестраторе, не в vendored-файлах; владение гейтом и HARD-GATE — в §5.0):** после финального whole-branch ревью и перед `finishing-a-development-branch` — **acceptance-демо**: агент запускает продукт (dev-сервер / установка пакета / бот в тестовом режиме), даёт пользователю адрес/команду и проводит по каждому must-сценарию из MVP-scope. Гейт: «каждый сценарий работает у меня на глазах». Провал сценария → задача на исправление → повтор демо. Артефакт фазы — `docs/spp/06-acceptance-demo.md` (протокол: сценарий → как показан → результат), его пишет оркестратор (§5.0).
+
+Перед acceptance-демо оркестратор проходит два своих чекпоинта — `data-boundaries` и `pre-show-audit` (оба принадлежат оркестратору, а не vendored-цепочке фазы 6). Отдельно от них существует шесть отдельных helper-скиллов, вызываемых по ситуации, а не по фазе. Этот документ не источник истины по ним — состав и контракт см. в SKILL.md соответствующих скиллов.
 
 ### 5.11. `release-fixation` (фаза 7)
 

@@ -128,9 +128,13 @@ through a separate reviewer. From you — almost nothing. Output: a plan; at the
 one question: "there are N tasks, shall we start?"
 
 **Phase 6 — implementation.** The agent writes code from the plan: tests, review after every
-task. Nothing from you until it's assembled. Then it brings the product up live (dev server,
-bot in test mode) and walks you through every scenario. Output: working code; at the gate you
-watch every scenario work in front of your eyes.
+task. Nothing from you until it's assembled. After the whole-branch review and before the demo,
+the orchestrator runs two checkpoints — `data-boundaries` (where and how data is stored, what
+can be exported) and `pre-show-audit` (risks before showing the product and minimal security).
+Their findings become fix-tasks, not a separate gate. Then the agent brings the product up live
+(dev server, bot in test mode) and walks you through every scenario. Output: working code; at
+the gate you watch every scenario work in front of your eyes — still the only gate in phase 6
+where the decision is yours.
 
 **Phase 7 — release-fixation.** The agent fixes the version, writes up what the product can now
 do (in your language, not a list of commits), tags it. From you — confirm the version. Output:
@@ -375,9 +379,14 @@ themselves exactly the same way.
     the technical merge/PR/leave/discard menu so the owner never sees it.
 
 **The phase 6 gate is owned by the orchestrator, not by SDD itself.** After the final branch
-review, the orchestrator runs an acceptance demo — brings the product up (dev server, package
+review and before the acceptance demo, the orchestrator runs two checkpoints in order:
+`data-boundaries` (data storage boundaries — where things live, what can be exported) and
+`pre-show-audit` (risks before showing the product and minimal security). Each writes its own
+artifact and marks itself in state; checkpoint findings are fix-tasks, not a human gate. Only
+then does the orchestrator run the acceptance demo — brings the product up (dev server, package
 install, bot in test mode) and walks the owner through every must-scenario. Gate: "every
-scenario works in front of my eyes."
+scenario works in front of my eyes" — the only gate in phase 6 where the decision stays with
+the owner.
 
 ### Phases 7–9: release, deploy, operations (original skills)
 
@@ -420,6 +429,22 @@ scenario works in front of my eyes."
     `08-deploy-runbook.md`. The last skill in the chain — doesn't hand off further, but closes
     `current_phase: done` and describes how new feedback re-enters the pipeline through
     idea-intake or mvp-scoping.
+
+### On-demand helpers
+
+Six standalone skills sit outside the state machine — they don't touch `pipeline-state.md` and
+aren't part of any phase. They're invoked by their own trigger when needed, usually around
+phase 6:
+
+- **accessibility** — baseline a11y audit and fixes.
+- **mobile-version** — a responsive pass, design only.
+- **test-runner-setup** — test runner setup and one smoke test.
+- **seo-baseline** — technical page packaging for shareable links.
+- **geo-optimization** — public-page packaging for AI assistants.
+- **ux-copywriting** — UI microcopy and states.
+
+None of them expand product scope: they're design, packaging, or verification over work
+already built.
 
 ## Install under Claude Code
 
@@ -529,9 +554,11 @@ Copyright (c) 2025 Jesse Vincent.
 
 ## Versions
 
-Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 1.0.0, the first stable
-release. Behind it: the plugin build (0.1.0), refinements from two dogfooding runs of the pipeline
-(0.2.0), the differentiator verdict in discovery (0.3.0), auto-disambiguation for the orchestrator
-(0.3.1), positioning as a replacement for obra/superpowers, standalone invocation of phase skills,
-and Codex readiness (0.4.0), and in 1.0.0 — a one-command Codex install script and the skill
+Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 1.1.0: eight new
+course-coverage skills — two phase-6 checkpoints (`data-boundaries`, `pre-show-audit`) and six
+standalone helpers — additive, without breaking the 1.0.0 public contract. Behind it: the plugin
+build (0.1.0), refinements from two dogfooding runs of the pipeline (0.2.0), the differentiator
+verdict in discovery (0.3.0), auto-disambiguation for the orchestrator (0.3.1), positioning as a
+replacement for obra/superpowers, standalone invocation of phase skills, and Codex readiness
+(0.4.0), and the first stable release 1.0.0 — a one-command Codex install script and the skill
 public API plus pipeline state declared stable.

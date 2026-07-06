@@ -2,6 +2,32 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [1.1.0] — 2026-07-06
+
+Восемь новых SPP-original скиллов, закрывающих то, что курс «От идеи до
+продакшена» проходил руками поверх пайплайна. Изменения аддитивные: имена
+существующих скиллов, продуктовый язык гейтов и формат
+`docs/spp/pipeline-state.md` не меняются — публичный контракт 1.0.0 в силе.
+
+### Добавлено
+
+- Два orchestrator-owned чекпоинта фазы 6, между финальным whole-branch ревью
+  и acceptance demo: `data-boundaries` (границы хранения данных, экспорт,
+  риски) и `pre-show-audit` (риски перед показом и минимальная безопасность).
+  Находки — задачи на фикс; человеческий гейт остаётся один, acceptance demo.
+- Шесть standalone helper-скиллов вне машины состояний: `accessibility`,
+  `mobile-version`, `test-runner-setup`, `seo-baseline`, `geo-optimization`,
+  `ux-copywriting`. Вызываются по своему триггеру, `pipeline-state.md` не трогают.
+- Поля `data_boundaries_checked` и `pre_show_audit_checked` в схеме
+  `pipeline-state.md`: оркестратор машинно проверяет оба перед acceptance demo
+  (новый hard-gate), демо не стартует, пока они не `true`.
+
+### Изменено
+
+- Оркестратор `using-super-puper-powers`: разводка чекпоинтов фазы 6 и раздел
+  On-demand helpers со списком шести хелперов.
+- README (оба языка), дизайн-доки и UPSTREAM отражают новые скиллы и чекпоинты.
+
 ## [1.0.0] — 2026-07-06
 
 Первый стабильный релиз. Плагин прошёл два догфуд-прогона от идеи до деплоя,

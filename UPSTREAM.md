@@ -20,7 +20,7 @@ Generated from `git ls-files skills/ hooks/ LICENSE.superpowers` (30 tracked pat
 - `reworked` — upstream skill used as a starting point but substantially rewritten (different flow, not just an attribution header or a few renames); see Note.
 - `not copied (reason)` — exists upstream, deliberately not brought in.
 
-Only vendored/modified/reworked files get a row. Files that are original SPP work (the new phase skills, review skills' own `SKILL.md`, `commands/spp.md`, `README.md`, `LICENSE`, `.claude-plugin/*.json`, etc.) are not vendoring artifacts and are intentionally absent from this table.
+Only vendored/modified/reworked files get a row. Files that are original SPP work (the new phase skills, review skills' own `SKILL.md`, the course-coverage skills — phase-6 checkpoints and on-demand helpers, `commands/spp.md`, `README.md`, `LICENSE`, `.claude-plugin/*.json`, etc.) are not vendoring artifacts and are intentionally absent from this table.
 
 | Path | Status | Note |
 |---|---|---|

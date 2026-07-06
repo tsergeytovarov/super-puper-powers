@@ -73,8 +73,15 @@ The state file's life cycle, condensed from the spec:
 Phase 6 is different: its worker skill is the vendored subagent-driven-development skill, which knows nothing about `pipeline-state.md` and, left alone, walks straight from its final whole-branch review into `finishing-a-development-branch`. The orchestrator — not the worker skill — owns this phase's gate and must intercept that transition.
 
 - If the plan spans multiple sub-projects, execute their plans in the `subproject_order` recorded in state, not in file-listing order or arrival order.
-- After subagent-driven-development's final whole-branch review completes, the orchestrator runs the **acceptance demo**: for every must-scenario recorded in the MVP scope, demonstrate it running live and record the result. Write the outcome to `docs/spp/06-acceptance-demo.md` as scenario → how demonstrated → result.
+- After subagent-driven-development's final whole-branch review completes and before the acceptance demo, the orchestrator runs two checkpoint skills in order: `super-puper-powers:data-boundaries`, then `super-puper-powers:pre-show-audit`. Each writes its artifact (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`) and sets its state field (`data_boundaries_checked`, `pre_show_audit_checked`). Their findings are fix-tasks, not human gates — the acceptance demo remains the only human-facing gate of phase 6. The acceptance demo MUST NOT start until both state fields are `true`.
+- Once both checkpoints are done, the orchestrator runs the **acceptance demo**: for every must-scenario recorded in the MVP scope, demonstrate it running live and record the result. Write the outcome to `docs/spp/06-acceptance-demo.md` as scenario → how demonstrated → result.
 - While the demo is in progress, `phase_status` is `gate_pending`. A failed scenario is not a gate failure to negotiate around — it's a task: fix it, then re-run the demo for that scenario.
+
+`pipeline-state.md` records `data_boundaries_checked` and `pre_show_audit_checked` as booleans, each paired with its artifact path (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`). Both must be `true` before the acceptance demo starts — machine-checked by opening the file, not recalled from memory.
+
+<HARD-GATE>
+Before starting the acceptance demo, you MUST machine-check `docs/spp/pipeline-state.md` first: open the file, read it, and confirm both `data_boundaries_checked: true` and `pre_show_audit_checked: true` are set, each with its artifact path recorded. If either is missing or `false`, STOP — run the missing checkpoint skill(s) before the demo. Do not rely on recalling that the checkpoints ran.
+</HARD-GATE>
 
 <HARD-GATE>
 Before ANY invocation of finishing-a-development-branch — by the orchestrator or by any agent, including one arriving at that step from inside subagent-driven-development with no memory of this rule — you MUST machine-check `docs/spp/pipeline-state.md` first: open the file, read it, and confirm `docs/spp/06-acceptance-demo.md` is recorded as approved. Do not rely on recalling that the demo happened; recollection is exactly what a compacted context loses. If the file does not exist, or `06-acceptance-demo.md` is not approved in it, STOP — do not invoke finishing-a-development-branch under any circumstance. Return control to this orchestrator instead; the acceptance demo is not optional ceremony, it is the only human-facing verification phase 6 has.
@@ -126,6 +133,19 @@ When multiple skills apply, the pipeline map above sets the approach — it tell
 - "I have a product idea" → super-puper-powers:idea-intake first, then whatever phase 0 needs.
 - "Fix this bug" (inside phase 6 implementation work) → super-puper-powers:systematic-debugging first, then domain skills.
 
+## On-demand helpers
+
+Six standalone helper skills sit outside the state machine and do not touch `pipeline-state.md`. Invoke them by their own triggers when the work calls for it — usually during phase 6, and `seo-baseline`/`geo-optimization` also around phase 8:
+
+- `super-puper-powers:accessibility` — baseline a11y audit and fixes.
+- `super-puper-powers:mobile-version` — design-only responsive pass.
+- `super-puper-powers:test-runner-setup` — test runner + one smoke test.
+- `super-puper-powers:seo-baseline` — technical page packaging for shareable links.
+- `super-puper-powers:geo-optimization` — public-page packaging for AI assistants.
+- `super-puper-powers:ux-copywriting` — UI microcopy and states.
+
+None of these expand product scope: they are design-only, packaging, or verification actions over work already built.
+
 ## Red Flags
 
 These thoughts mean STOP—you're rationalizing:
@@ -150,6 +170,7 @@ These thoughts mean STOP—you're rationalizing:
 | "I remember the acceptance demo passed, I'll go straight to finishing-a-development-branch" | Memory is not the gate. Machine-check `docs/spp/pipeline-state.md` for `06-acceptance-demo.md` approved, every single time, even (especially) after a context compaction that erased the memory of running the demo. |
 | "The plan is tiny, I'll skip straight to lite without checking `pipeline_profile`" | `pipeline_profile` is set by `plan-writing`'s size estimate, not by eyeballing the plan in phase 6. Read the field; don't re-derive the threshold here. |
 | "Lite mode means we can also skip plan-review since the plan is small" | Lite only thins phase 6 execution machinery. `spec-review`, `cross-spec-review`, and `plan-review` run regardless of profile — they're cheap and they catch defects before code exists. |
+| "I'll go straight to the acceptance demo, the build looks clean" | data-boundaries and pre-show-audit run first. Machine-check `data_boundaries_checked` and `pre_show_audit_checked` are `true` in pipeline-state.md before the demo. |
 
 ## User Instructions
 
