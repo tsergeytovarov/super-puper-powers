@@ -29,7 +29,7 @@ Phase 6 is the exception: its worker skill is vendored as-is from upstream and k
 
 Full phase-to-skill-to-artifact map: `skills/using-super-puper-powers/SKILL.md`.
 
-## Install
+## Install under Claude Code
 
 From GitHub:
 
@@ -48,6 +48,14 @@ From a local checkout instead:
 Either form works because `.claude-plugin/marketplace.json` declares the marketplace `super-puper-powers-marketplace` with a single plugin entry, `super-puper-powers`, sourced from `./`. The `@super-puper-powers-marketplace` suffix on `install` is required — Claude Code's `/plugin install` always needs `plugin-name@marketplace-name`, there is no bare-name shorthand.
 
 After install, start a new Claude Code session. A `SessionStart` hook injects the pipeline orchestrator (`using-super-puper-powers`) automatically — describe your product idea and it takes over. If you'd rather trigger it explicitly, run `/spp`: it reads `docs/spp/pipeline-state.md` and either resumes the pipeline or offers to start phase 0.
+
+## Install under Codex
+
+The repo also ships a Codex manifest (`.codex-plugin/plugin.json`) — SPP is usable under OpenAI Codex, not just Claude Code. The skills live in `./skills/`, which Codex reads.
+
+Publishing to the official Codex plugin marketplace (openai/plugins) is a separate, external process and isn't done yet. For local use, wire the skills in as Codex personal skills: symlink each `skills/<name>` into `~/.agents/skills/<name>` (a symlink keeps the repo as the source of truth), then restart Codex.
+
+One thing about orchestration: Codex has no `SessionStart` hook, so the orchestrator is not injected for you. Start the pipeline explicitly — describe your idea and invoke `super-puper-powers:using-super-puper-powers`, or jump straight to a phase skill by name (the phase skills carry standalone triggers for exactly this). The multi-agent config and environment detection Codex needs are in `skills/using-super-puper-powers/references/codex-tools.md`.
 
 ## SPP and obra/superpowers: keep one plugin
 

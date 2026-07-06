@@ -28,7 +28,9 @@ Only vendored/modified/reworked files get a row. Files that are original SPP wor
 | `hooks/hooks.json` | vendored as-is | copy of upstream `hooks/hooks.json` |
 | `hooks/run-hook.cmd` | vendored as-is | copy of upstream `hooks/run-hook.cmd` |
 | `hooks/session-start` | modified | adapted from upstream `hooks/session-start`; skill path and injection text renamed to SPP; Cursor/Copilot platform branches removed; v0.3.1 detects a co-active upstream superpowers via enabledPlugins and appends an orchestrator-precedence note |
-| `skills/using-super-puper-powers/SKILL.md` | reworked | reworked from upstream `using-superpowers`; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added |
+| `skills/using-super-puper-powers/SKILL.md` | reworked | reworked from upstream `using-superpowers`; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; v0.4 adds a Codex platform-notes section pointing to a Codex-tools reference |
+| `.codex-plugin/plugin.json` | new (modeled on upstream) | SPP-original Codex manifest, shaped after upstream `.codex-plugin/plugin.json` (skills/hooks/interface fields) with SPP data |
+| `skills/using-super-puper-powers/references/codex-tools.md` | modified | adapted from upstream `using-superpowers/references/codex-tools.md`; skill references retargeted to SPP |
 | `skills/spec-writing/SKILL.md` | reworked | reworked from upstream `brainstorming`; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped |
 | `skills/plan-writing/SKILL.md` | reworked | reworked from upstream `writing-plans`; plans path `docs/spp/05-plans/`; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option |
 | `skills/spec-review/spec-reviewer.md` | modified | adapted from upstream `brainstorming/spec-document-reviewer-prompt.md` |

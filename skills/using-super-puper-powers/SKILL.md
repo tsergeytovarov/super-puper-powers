@@ -4,7 +4,7 @@ description: Use when starting any conversation - orchestrates the SPP pipeline 
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes
+> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes; added Codex platform notes pointing to a Codex-tools reference
 
 <SUBAGENT-STOP>
 If you were dispatched as a subagent to execute a specific task, ignore this skill.
@@ -154,3 +154,7 @@ These thoughts mean STOP—you're rationalizing:
 ## User Instructions
 
 User instructions (CLAUDE.md, AGENTS.md, GEMINI.md, etc, direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
+
+## Platform notes
+
+Under Claude Code this orchestrator is injected automatically by a SessionStart hook. **Under OpenAI Codex there is no SessionStart hook** — nothing injects the orchestrator for you. Start or resume the pipeline by invoking `super-puper-powers:using-super-puper-powers` directly, or jump to a single phase by naming its skill (the phase skills carry standalone triggers for exactly this). When running under Codex, read `references/codex-tools.md` for the multi-agent config (`spawn_agent`/`wait_agent`/`close_agent`) and the git environment detection that the vendored phase-6 and phase-7 skills rely on.
