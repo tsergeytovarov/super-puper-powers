@@ -114,9 +114,9 @@ Then ask the user to approve the summary — not the full spec:
 
 Wait for the user's response. If they request changes, make them in the spec, re-run spec-review (and cross-spec-review) as needed, update the summary, and ask again. Only proceed once the user approves the summary.
 
-### 11. Transition to implementation
+### 11. Spec phase done
 
-Invoke `super-puper-powers:plan-writing` to create a detailed implementation plan. Do NOT invoke any other skill — plan-writing is the next step.
+The spec phase ends here: the spec is written, and spec-review (and cross-spec-review, if applicable) have passed clean. Do not invoke `plan-writing` or any other implementation skill from this step. Planning is a separate, user-driven transition — see `## Next step` below.
 
 ## Red Flags
 
@@ -131,3 +131,13 @@ Invoke `super-puper-powers:plan-writing` to create a detailed implementation pla
 | "The user is technical, I'll show them the architecture section for sign-off" | Gates in this phase are product behavior only, regardless of the user's technical background — architecture sign-off from someone not building the thing is meaningless approval theater. |
 | "I'll present the whole spec for approval, it's more thorough than a summary" | The user approves `summary-for-review.md` in product language, not the full spec. Asking them to read spec language defeats the purpose of the summary gate. |
 | "The user just asked for a spec but there's no approved stack in pipeline-state.md, so I can't start" | Standalone invocation doesn't require an upstream MVP scope or stack document to exist. Ask the user directly what the feature does and what it's built with, then run the design dialogue and the HARD-GATE exactly as written — don't block a one-off request on phases that were never run. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `plan-writing` skill;
+- (spec-review and cross-spec-review run automatically before planning starts.)
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

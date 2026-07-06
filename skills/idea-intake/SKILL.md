@@ -1,6 +1,6 @@
 ---
 name: idea-intake
-description: Use when the user describes a product idea and docs/spp/pipeline-state.md does not exist - starts the SPP pipeline by capturing an idea brief through a one-question-at-a-time interview
+description: Use when the user describes a product idea, OR directly asks to capture or write up a product idea brief - captures an idea brief through a one-question-at-a-time interview. Runnable standalone; if docs/spp/pipeline-state.md is absent it starts a fresh journal, if present it appends.
 ---
 
 ## Overview
@@ -13,7 +13,7 @@ The person you're interviewing has no development background. For anything not a
 
 ### 0. Confirm the trigger
 
-Check `docs/spp/pipeline-state.md`. If it already exists, this skill does not apply — the pipeline is already past phase 0; follow the orchestrator's state machine instead. Proceed only when the file is absent and the user is describing a product idea.
+Check `docs/spp/pipeline-state.md`. If it is absent, this is a fresh start — you create the journal as part of this skill. If it already exists, read it as memory (the project may already carry earlier work and decisions) and append your brief rather than overwriting it. Either way, proceed with the interview when the user is describing a product idea or asking to capture one — this skill is runnable standalone and does not require an empty project.
 
 ### 1. Interview — extract what's already answered, then one question per message for the rest
 
@@ -113,3 +113,12 @@ State the next step explicitly: **"Next: the `super-puper-powers:product-discove
 | "The brief seems obvious, I'll skip the playback gate" | No artifact is approved without the user confirming it in their own gate. Skipping it means phase 1 builds on an unconfirmed brief. |
 | "I'll fill in a plausible answer for the vague one" | If the user's answer was vague, the brief stays vague. Inventing specificity fabricates a brief the user never actually approved. |
 | "Discovery will need the product type, I'll guess it now" | Not this skill's job — `product_type` stays `null`. Guessing here just means someone downstream has to un-guess it. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `product-discovery` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

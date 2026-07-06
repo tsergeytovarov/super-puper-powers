@@ -13,7 +13,7 @@ The gate at the end approves scenarios, not features. The person approving this 
 
 ### 0. Confirm the trigger and read state
 
-Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 1` and `phase_status: approved` — discovery ran and the decision was "go." Read both inputs before doing anything else:
+Read `docs/spp/pipeline-state.md`. This is the recommended phase after phase 1 (discovery approved with a go decision), but it also runs standalone on a direct request — it does not require a pipeline or an approved prior phase. If a journal exists, read it for context along with both inputs below; otherwise work from the discovery report / the user's request directly (see step 0.5):
 
 - `docs/spp/00-idea-brief.md` — the original problem, audience, success criterion, budget, timeline, and the **differentiation** answer: how this product is different from what already exists, what people do today instead.
 - `docs/spp/01-discovery-report.md` — competitors, legal risks, market read, feasibility, the **idea killers** section, and the **differentiator verdict** (survives / weak / killed) that discovery's competitor research landed on; this is what keeps prioritization honest instead of wishful.
@@ -95,7 +95,7 @@ Present the **list of scenarios** — not the feature list, not the must/later/n
 
 ### 8. Hand off
 
-State the next step explicitly: **"Next: the `super-puper-powers:stack-selection` skill."** Do not start stack decisions yourself — technical tooling is that skill's job, not this one's.
+Follow the `## Next step` section below to tell the user what comes next. Do not start stack decisions yourself — technical tooling is that skill's job, not this one's.
 
 ## Red Flags
 
@@ -113,3 +113,12 @@ State the next step explicitly: **"Next: the `super-puper-powers:stack-selection
 | "The differentiator verdict was 'killed,' I'll quietly move it to later so it stops being the headline risk" | Moving a `killed`-verdict item to later reframes a competitive dead-end as a scheduling choice. It's not a scoping fix — it needs its own explicit owner call at the gate, not a bucket change that buries it. |
 | "Discovery already said 'weak' in its report, mvp-scoping doesn't need to re-raise it" | Discovery stating the verdict and mvp-scoping surfacing it as an explicit owner call at this gate are different obligations. A verdict mentioned once in a prior artifact is not the same as a decision logged at this phase's gate. |
 | "The user asked for an MVP scope directly but there's no discovery report on disk, so I can't proceed" | Standalone invocation doesn't require an upstream discovery report to exist. Ask the user directly for the problem, audience, and differentiator, note plainly that no discovery backed this scope, and proceed — don't block a one-off request on a phase that was never run. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `stack-selection` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

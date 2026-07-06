@@ -44,3 +44,12 @@ When a product decomposes into multiple sub-project specs, each spec passes its 
 - Mark a scenario that crosses a seam as covered because each side individually mentions it — check that the handoff itself (what crosses, in what shape, who owns what) is actually described, not just that both ends exist.
 - Skip logging the round count, outcome, and resulting `subproject_order` to the Decisions log — without it, a resumed session can't tell whether this gate already passed or what order was decided.
 - Reuse the same reviewer subagent across rounds instead of dispatching fresh each time with the updated spec set — a subagent that already saw its own prior findings is no longer an independent reviewer.
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `plan-writing` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

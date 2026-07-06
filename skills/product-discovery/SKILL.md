@@ -17,7 +17,7 @@ Some environments (sandboxed, headless) give a research subagent no web-search t
 
 ### 0. Confirm the trigger and read state
 
-Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 0` and `phase_status: approved` — the idea brief is confirmed and nothing later has started. Read `docs/spp/00-idea-brief.md` for the brief content, including the two jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) — the legal-risk research depends on both.
+Read `docs/spp/pipeline-state.md`. This is the recommended phase after phase 0 (idea brief approved), but it also runs standalone on a direct request — it does not require a pipeline or an approved prior phase. If a journal exists at `current_phase: 0` and `phase_status: approved`, read `docs/spp/00-idea-brief.md` for the brief content, including the two jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) — the legal-risk research depends on both; otherwise work from the user's request directly (see step 0.5).
 
 On starting work, write `current_phase: 1`, `phase_status: in_progress`.
 
@@ -116,7 +116,7 @@ Present the recommendation and ask the user to decide: **go**, **pivot**, or **s
 
 ### 8. Hand off
 
-On **go** only: state the next step explicitly — **"Next: the `super-puper-powers:mvp-scoping` skill."** Do not start scoping work yourself.
+On **go** only: follow the `## Next step` section below to tell the user what comes next. Do not start scoping work yourself.
 
 On pivot or stop, there is no "next skill" to hand off to in this phase — pivot re-enters `idea-intake`, stop ends the pipeline.
 
@@ -136,3 +136,12 @@ On pivot or stop, there is no "next skill" to hand off to in this phase — pivo
 | "I don't have a real source for this claim but I need one to look credible, I'll cite a plausible-sounding one" | Never invent a URL or source name. No web access means no citations — a fabricated one is worse than an honest "not verified" mark, because it actively misleads whoever checks it. |
 | "Quick mode already says market/demand wasn't researched, that covers the go-decision risk too" | The 'not researched' caveat describes what didn't happen; the mandatory warning at the gate names the consequence for the decision itself. Quick mode requires both — one doesn't substitute for the other. |
 | "The user just asked me to check this idea, but there's no approved phase 0 in pipeline-state.md, so I can't run" | Standalone invocation doesn't need an approved pipeline phase. Gather the idea and jurisdiction fields directly from the user and run the research — don't block a one-off request on an artifact that was never going to exist. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `mvp-scoping` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

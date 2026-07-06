@@ -199,3 +199,11 @@ On confirmation:
 | "Task N is basically like Task M, I'll just say 'same as Task N'" | "Similar to Task N" is a banned placeholder — the engineer may read tasks out of order and needs the actual code repeated, not a cross-reference. |
 | "The spec doesn't say how to handle this edge case, I'll write 'add appropriate error handling'" | That's a plan failure, not a placeholder-safe shorthand. Every step needs the actual content an engineer would need — go back to the spec (or spec-review) if the behavior genuinely isn't defined yet. |
 | "The user handed me a spec directly but there's no approved phase 4 in pipeline-state.md, so I can't plan it" | Standalone invocation doesn't require the spec to be pipeline-tracked. Take the spec from wherever the user points, run the same file-mapping, task-writing, self-review, and plan-review rigor, and skip only the pipeline-state bookkeeping — don't block a one-off request on a phase that was never run. |
+
+## Next step
+
+There is no fresh-chat handoff here. Once the plan is written and reviewed, the build
+begins in THIS session by design: this skill's final step hands the plan to
+`subagent-driven-development`, which executes it task by task. Tell the user the plan
+is ready and that execution is starting — plan-writing and the build run continuously
+in one session, not as a new chat.

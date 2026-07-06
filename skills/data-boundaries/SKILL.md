@@ -19,7 +19,7 @@ Standalone: whenever asked where a product's data lives, or whether its storage 
 
 ## Process
 
-### 0. Read state
+### 0. Confirm ordering
 
 Read `docs/spp/pipeline-state.md`. Confirm the final whole-branch review is done and the acceptance demo hasn't run yet — this checkpoint sits between the two. If running standalone (no pipeline in progress), skip state entirely and go straight to step 1.
 
@@ -60,7 +60,7 @@ Write `docs/spp/06-data-boundaries.md` per the Artifact section below.
 
 ### 6. Update state
 
-Set `data_boundaries_checked: true` in `docs/spp/pipeline-state.md`, with the artifact path (`docs/spp/06-data-boundaries.md`). This is a state update, not a gate — there is no owner-facing question attached to it. Hand control back to the orchestrator to proceed toward the acceptance demo.
+Write the artifact `docs/spp/06-data-boundaries.md` — its presence on disk is what the orchestrator checks before the acceptance demo. If a pipeline journal is being kept, you may note completion there too, but the on-disk artifact is the source of truth, not a flag field. Hand control back to the orchestrator.
 
 ## Artifact
 
@@ -82,9 +82,9 @@ Set `data_boundaries_checked: true` in `docs/spp/pipeline-state.md`, with the ar
 - Storage decision is recorded explicitly, not left implicit.
 - Export has been verified against real data, or its absence is recorded as a named risk.
 - Every boundary risk in the table is marked either fixed or deferred with a stated reason.
-- `data_boundaries_checked: true` is set in `docs/spp/pipeline-state.md` with the artifact path.
+- `docs/spp/06-data-boundaries.md` exists on disk (this is what the orchestrator checks, not a flag field).
 
-Running standalone (no pipeline): skip the state-field step and treat the pipeline artifact as optional — report the storage map and boundary findings directly instead.
+Running standalone (no pipeline): the on-disk artifact is optional — report the storage map and boundary findings directly instead.
 
 ## Red Flags
 
@@ -95,3 +95,11 @@ Running standalone (no pipeline): skip the state-field step and treat the pipeli
 | "Export exists in the code, so it must work" | Verify it against real data created through the product, then open the file by hand. A code path that exists and one that actually produces a correct, secret-free file are different claims. |
 | "This is a phase-6 checkpoint, so it needs its own owner-facing gate" | No separate human gate here. Findings become fix-tasks; the acceptance demo remains the only human gate of phase 6. |
 | "No real risks here, I'll leave the boundary table empty" | Every storage layer has at least one real boundary (device loss, browser clear, no multi-user support, etc.) — find it and record blocker/fix/defer, don't leave the table blank because nothing is currently on fire. |
+
+## Next step
+
+This is a phase-6 checkpoint. When it's done:
+- in a running pipeline, control returns to the orchestrator, which runs `pre-show-audit` next, then the acceptance demo;
+- run standalone, just tell the user the data-storage check is done and what you found.
+
+Do not auto-invoke anything. The orchestrator or the user drives what comes next.

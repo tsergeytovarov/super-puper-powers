@@ -1,11 +1,11 @@
 ---
 name: deploy-strategy
-description: Use when a release version is fixed (phase 7 approved in docs/spp/pipeline-state.md) - chooses a deploy strategy with the owner in cost-and-consequence terms, then executes it into a repeatable runbook
+description: Use when a product is ready to ship, OR when the user directly asks how or where to deploy or to write a deploy runbook - chooses a deploy strategy with the owner in cost-and-consequence terms, then executes it into a repeatable runbook. Self-checks on disk for a fixed release version first — it warns and offers to fix it, it does not block.
 ---
 
 ## Overview
 
-This is phase 8 of the SPP pipeline. The release is versioned, tagged, and described — now it has to actually go somewhere the owner's users can reach it. This is the one phase where SPP touches production, and the two steps are not equally weighted: choosing *how* to deploy this specific product is the real work; executing the choice is following a playbook.
+This is phase 8 of the SPP pipeline, but it can also be invoked standalone whenever a product is ready to ship or the owner directly asks how or where to deploy. The release is versioned, tagged, and described — now it has to actually go somewhere the owner's users can reach it. This is the one phase where SPP touches production, and the two steps are not equally weighted: choosing *how* to deploy this specific product is the real work; executing the choice is following a playbook.
 
 Step 1 is deliberately not "pick a hosting provider." It's a decision about ongoing money and ongoing effort that the owner has to live with for the life of the product — same shape as `stack-selection` in phase 3, but now the stakes are real: this isn't a plan on paper, it's what happens when someone actually uses the thing. Options get framed the way `stack-selection` frames them — dollars, update effort, what breaks — never as infrastructure jargon on its own. Step 2 then executes against a reference playbook keyed to `product_type`, but "playbook" means reference material to draw on, not a rigid recipe to follow blind; the specific product still dictates specific choices within it.
 
@@ -17,14 +17,27 @@ The phase's closing gate has two modes, and which one applies is a real decision
 
 ### 0. Confirm the trigger and read state
 
-Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 7` and `phase_status: approved` — the release version is fixed (`docs/spp/07-release-notes.md` exists and is approved). Read the inputs before doing anything else:
+This skill runs standalone: when a product is ready to ship, or when the owner directly asks how or where to deploy, or asks for a deploy runbook. No pipeline phase gate is required to start. If `docs/spp/pipeline-state.md` exists, read it for context and inputs:
 
 - `product_type` and `stack` from the state file — what's being deployed and what it's built with.
 - `docs/spp/00-idea-brief.md` — budget and the jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) for data-residency constraints.
 
-On starting work, write `current_phase: 8`, `phase_status: in_progress`.
+If the pipeline-state journal exists, write `current_phase: 8`, `phase_status: in_progress` on starting work. If it doesn't exist, skip the state update — this skill still runs standalone without it.
 
 Steps 1-3 below are **Step 1 — choose the strategy** (the phase's main value); steps 4-8 are **Step 2 — execute**.
+
+### 0.5. Pre-deploy self-check
+
+Run this before choosing a strategy. Check ON DISK:
+
+- Is there a fixed release version? (`docs/spp/07-release-notes.md` exists with a
+  semver version recorded.)
+- If NO: warn the user — deploying without a fixed version means not knowing what
+  exactly is being shipped. Offer to fix the version first via `release-fixation`.
+  Proceed only on the user's explicit choice.
+- If YES: proceed.
+
+This reads the file directly, not pipeline-state.md.
 
 ### 1. Gather inputs
 
@@ -111,7 +124,7 @@ While either question is outstanding, `phase_status: gate_pending`.
 
 ### 8. Hand off
 
-State the next step explicitly: **"Next: the `super-puper-powers:post-release` skill."** Do not start monitoring or feedback-loop setup yourself — this skill's job ends at a release that's either deployed-and-verified (`executed`) or strategy-locked-and-documented (`deferred`). Either way, hand off `deploy_status` along with everything else — `post-release` reads it to decide whether the product is actually live.
+This skill's job ends at a release that's either deployed-and-verified (`executed`) or strategy-locked-and-documented (`deferred`). Do not start monitoring or feedback-loop setup yourself. Hand off `deploy_status` along with everything else — `post-release` reads it to decide whether the product is actually live. The explicit next-step transition for the owner is in the closing **Next step** section of this file.
 
 ## Red Flags
 
@@ -126,3 +139,12 @@ State the next step explicitly: **"Next: the `super-puper-powers:post-release` s
 | "We're deferring, but I'll phrase the gate as 'product is live' so the owner feels progress" | The gate question must match `deploy_status`. Asking "is it live" when nothing is deployed makes the owner accept a false claim about production — that's the exact dishonesty the verification discipline elsewhere in this pipeline exists to prevent. |
 | "This product has secrets somewhere probably, I'll just write something plausible for the runbook's secrets section" | N/A requires a real, stated reason ("this product has no secrets") — never a filled-in placeholder to make the section look complete. If you're not sure whether the product has secrets, that's a reason to check, not a reason to guess and write it down. |
 | "Deferred means we skip the smoke test entirely, no need to mention it again" | Deferred moves the smoke test to actual-deploy time — it doesn't cancel it. The runbook has to say so explicitly, so a future reader (owner or agent) knows the test is still owed, not silently waived. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `post-release` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

@@ -1,27 +1,37 @@
 ---
 name: release-fixation
-description: Use when the acceptance demo is approved (phase 6 approved in docs/spp/pipeline-state.md) - verifies the work, finishes the branch on the agent's own decision, fixes a semver version and writes owner-language release notes
+description: Use when a development branch is complete and ready to become a release, OR when the user directly asks to fix a version, write release notes, or finish the branch - verifies the work, finishes the branch on the agent's own decision, fixes a semver version and writes owner-language release notes. Self-checks on disk for a passed acceptance demo first — it warns and asks for confirmation, it does not block.
 ---
 
 ## Overview
 
-This is phase 7 of the SPP pipeline. The acceptance demo passed — every must-scenario from the MVP scope worked in front of the owner. What was a branch of work now has to become a release: verified, integrated, versioned, and described in terms the owner can read without touching a diff.
+This is phase 7 of the SPP pipeline, but it can also be invoked standalone whenever a development branch is complete and ready to become a release, or whenever the user directly asks to fix a version, write release notes, or finish the branch. What was a branch of work now has to become a release: verified, integrated, versioned, and described in terms the owner can read without touching a diff.
 
 Two vendored skills do the technical heavy lifting here, `verification-before-completion` and `finishing-a-development-branch`. The second one carries a twist. Upstream, it ends by showing the human a menu: merge locally, push and open a PR, keep the branch, or discard the work. That's a sane question for a developer and a meaningless one for the owner this pipeline serves — they can't evaluate "PR vs local merge" any more than they can evaluate a diff, and principle 1 of the pipeline says exactly that: every human-facing gate speaks in product language, never git. So this skill wraps that menu instead of forwarding it: the agent picks the integration method itself, defaults to merging into the main branch locally, and writes the choice into the Decisions log with its reasoning. The owner never sees "merge or PR" — they see "fix version 0.1.0?"
 
 ## Process
 
-### 0. Confirm the trigger and read state
+### 0. Confirm the trigger
 
-Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 6` and `phase_status: approved` — the orchestrator's acceptance demo (`docs/spp/06-acceptance-demo.md`) ran and every must-scenario passed. Read it before doing anything else; it's the evidence that the work is actually done, not just committed.
-
-On starting work, write `current_phase: 7`, `phase_status: in_progress`.
+This skill runs whenever a development branch is complete and ready to become a release, or whenever the user directly asks to fix a version, write release notes, or finish the branch — no pipeline gate required to start. If `docs/spp/pipeline-state.md` exists and is being tracked, write `current_phase: 7`, `phase_status: in_progress` on starting work; if it doesn't exist (standalone invocation), skip this and proceed. The actual safety check for a passed acceptance demo happens later, on disk, immediately before the branch gets finished (see "Pre-release self-check" below) — not here.
 
 ### 1. Verify the work
 
 Run `super-puper-powers:verification-before-completion` (vendored). Fresh evidence, not a recollection of the acceptance demo — the demo proved the product behaves correctly in front of the owner; this step proves the underlying commands (tests, build, lint) still say so right now, on this exact tree, before anything gets merged or tagged. Do not skip this because the demo already looked convincing — the demo is owner-facing behavior, this is engineering evidence, and a release needs both.
 
 **If command execution is unavailable in this environment** — no way to actually run tests, build, or lint — this step cannot produce the fresh evidence `verification-before-completion` requires, and no amount of care substitutes for that. Do not run a partial check and round it up, and do not report a pass from memory of an earlier run. Record honestly in `docs/spp/07-release-notes.md` (step 6): "verification not executed (restricted environment, no command execution available)." This is a legal, documented outcome — a release fixed without a verification claim attached to it is honest; a release that claims a green run nobody actually observed is the fabrication the verification hard-gate exists to prevent.
+
+### 1.5. Pre-release self-check
+
+Run this after step 1 and before step 2 (Finish the branch). Check ON DISK:
+
+- Does `docs/spp/06-acceptance-demo.md` exist and record the demo as approved?
+- If NO: warn the user plainly — there is no passed acceptance demo, so merging or
+  releasing risks shipping something broken or leaky. Ask for an explicit "yes,
+  release anyway" before continuing. Do not proceed silently.
+- If YES: proceed.
+
+This reads the file directly, not pipeline-state.md.
 
 ### 2. Finish the branch — agent decides, owner doesn't see the menu
 
@@ -68,7 +78,7 @@ Ask the owner, in product language only: **"Fix version X?"** (substituting the 
 
 ### 8. Hand off
 
-State the next step explicitly: **"Next: the `super-puper-powers:deploy-strategy` skill."** Do not start deploy planning yourself — this skill's job ends at a fixed, tagged, described release.
+See the closing section of this file for how to hand off. Do not start deploy planning yourself — this skill's job ends at a fixed, tagged, described release.
 
 ## Red Flags
 
@@ -84,3 +94,12 @@ State the next step explicitly: **"Next: the `super-puper-powers:deploy-strategy
 | "Git-write isn't available, but I already know the merge would have gone cleanly — I'll write it up as merged" | A merge that didn't happen isn't a merge. Record "finishing not executed (restricted environment)" and leave the branch state as it actually is — never describe a git operation you didn't perform. |
 | "No git-write, so I'll skip the tag but not mention it — the version number in the release notes covers it" | The absence of a tag has to be stated, not left for the reader to infer from a document that otherwise reads like everything succeeded. Silence about a skipped step reads as an oversight or, worse, as a claim that it happened; say "tag not executed (restricted environment)" explicitly. |
 | "The environment is restricted, so I'll just skip this whole phase and let the owner know 'release isn't possible here'" | Restricted execution degrades specific mechanisms (verification, branch finishing, the tag) — it doesn't cancel the phase. The version still gets fixed, the changelog still gets written, and the release notes still get produced; what's honest is naming exactly which git/execution steps didn't run, not abandoning the phase because some of it can't. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `deploy-strategy` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

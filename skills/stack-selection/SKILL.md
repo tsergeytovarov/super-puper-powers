@@ -13,7 +13,7 @@ The stack is chosen explicitly, here, once — not implicitly during design, not
 
 ### 0. Confirm the trigger and read state
 
-Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 2` and `phase_status: approved` — the MVP scope is confirmed. Read the inputs before doing anything else:
+Read `docs/spp/pipeline-state.md`. This is the recommended phase after phase 2 (MVP scope approved), but it also runs standalone on a direct request — it does not require a pipeline or an approved prior phase. If a journal exists at `current_phase: 2` and `phase_status: approved`, read the inputs below before doing anything else; otherwise work from the MVP scope / the user's request directly (see step 0.5):
 
 - `docs/spp/02-mvp-scope.md` — the walking skeleton and must-have scenarios; the stack has to actually run these.
 - `docs/spp/00-idea-brief.md` — budget, timeline, and jurisdiction constraints from the original brief.
@@ -70,7 +70,7 @@ Present the options to the user in owner-consequence terms — cost, update effo
 
 ### 6. Hand off
 
-State the next step explicitly: **"Next: the `super-puper-powers:spec-writing` skill."** Do not start spec work yourself — this skill's job ends at a chosen, recorded stack.
+Follow the `## Next step` section below to tell the user what comes next. Do not start spec work yourself — this skill's job ends at a chosen, recorded stack.
 
 ## Red Flags
 
@@ -85,3 +85,12 @@ State the next step explicitly: **"Next: the `super-puper-powers:spec-writing` s
 | "Two options is basically the same as three, I'll just present the one I'd pick plus a strawman" | The process calls for genuine 2-3 candidates evaluated on the same criteria, not a preferred pick and a deliberately weak foil. A strawman option isn't a real trade-off and gives the user a false choice. |
 | "This 'no-build' stack is simple, I'll skip naming a test runner since there isn't one" | A missing runner still has to be stated as a deliberate, justified answer in the artifact, not silently omitted. Otherwise the stack drifts into "nothing to test with" and the conflict with TDD in later phases surfaces mid-implementation instead of now, when it's still cheap to pick a different stack. |
 | "The user just wants a stack picked but there's no approved MVP scope in pipeline-state.md, so I need that first" | Standalone invocation doesn't require an upstream MVP scope to exist as a pipeline artifact. Ask the user directly what the product does end to end, plus budget/timeline/jurisdiction, and proceed — don't block a one-off request on a phase that was never run. |
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is the `spec-writing` skill;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

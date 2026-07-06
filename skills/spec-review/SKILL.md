@@ -41,3 +41,13 @@ An author cannot reliably catch their own blind spots in a spec they just wrote 
 - Move on to `cross-spec-review` or back to `spec-writing`'s summary/gate step while any Critical or Important finding from the latest round is still unresolved.
 - Skip logging the round count and outcome to the Decisions log — without it, a resumed session can't tell whether this gate already passed.
 - Reuse the same reviewer subagent across rounds instead of dispatching fresh each time — a subagent that already saw its own prior findings and the author's fixes is no longer an independent reviewer.
+
+## Next step
+
+When this stage is complete, tell the user in their own language that:
+- this stage is done;
+- the next logical step is `cross-spec-review` if `docs/spp/04-specs/` holds more than
+  one spec, otherwise `plan-writing`;
+- they should start it in a fresh chat so that skill gets clean context.
+
+Do not auto-invoke the next skill. The user drives the transition — offer, do not proceed.

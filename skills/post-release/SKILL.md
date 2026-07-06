@@ -1,30 +1,30 @@
 ---
 name: post-release
-description: Use when the deploy gate is approved (phase 8 approved in docs/spp/pipeline-state.md) - sets up minimal monitoring and a feedback channel, then closes the loop back into the pipeline
+description: Use when a product is deployed or about to be, OR when the user directly asks to set up monitoring or a feedback channel after release - sets up minimal monitoring and a feedback channel, then closes the loop back to new ideas.
 ---
 
 ## Overview
 
-This is phase 9 of the SPP pipeline — the last one. Ordinarily the product is live and the deploy's must-scenarios are verified, and what's left is not more building: it's making sure the owner finds out when something breaks, making sure their users have a way to say what's wrong or what's missing, and making sure that feedback has somewhere to go. This phase doesn't end the relationship between the owner and the product — it ends the pipeline's first pass through it and opens the door back in.
+This is phase 9 of the SPP pipeline — the last one, but it can also be invoked standalone whenever a product is deployed or the user asks to set up monitoring or a feedback channel. Ordinarily the product is live and the deploy's must-scenarios are verified, and what's left is not more building: it's making sure the owner finds out when something breaks, making sure their users have a way to say what's wrong or what's missing, and making sure that feedback has somewhere to go. This phase doesn't end the relationship between the owner and the product — it ends the pipeline's first pass through it and opens the door back in.
 
 That's the `deploy_status: executed` case. When phase 8 closed with `deploy_status: deferred` instead, none of that has happened yet — there is no live product, no production must-scenarios verified, nothing currently running for anyone to monitor. This phase still runs, but everything in it shifts tense: monitoring and the feedback channel get written as instructions for when the owner deploys, not descriptions of a running system. Treating a deferred deploy as if it were live — writing "the product is monitored at X" when X doesn't exist yet — is the exact dishonesty the pipeline's verification discipline exists to prevent, just relocated to phase 9.
 
 Two things this phase must not do. First, it must not turn "minimal monitoring" into a sales pitch for paid observability tooling — the owner is not a devops team, and a $49/month error-tracking subscription is not "minimal" just because it's popular. Second, it must not write the operations handbook the way an engineer would write a runbook for another engineer — the owner is the one who will read `09-operations.md` at 2am when something is wrong, and jargon at that moment is worse than useless.
 
-The gate that closes this phase is also the terminal state of the whole pipeline's state machine: `current_phase: done`. There is no phase 10, and this skill does not hand off to another skill the way every prior phase did. Instead, it describes the loop — feedback becomes a new idea brief, and a new idea brief restarts the pipeline at `idea-intake` or `mvp-scoping`, whichever fits what the feedback actually is.
+When a pipeline journal exists, the gate that closes this phase writes the journal's final entry: `current_phase: done`. There is no phase 10, and this skill does not hand off to another skill the way every prior phase did — see `## Next step` at the end of this document for what to tell the owner instead.
 
 ## Process
 
-### 0. Confirm the trigger and read state
+### 0. Confirm the trigger and read available context
 
-Read `docs/spp/pipeline-state.md`. This skill applies only when `current_phase: 8` and `phase_status: approved` — the deploy gate passed (`docs/spp/08-deploy-runbook.md` exists and is approved). What "passed" means depends on `deploy_status`: `executed` means production is live and its must-scenarios are verified; `deferred` means the strategy and runbook are approved but nothing is deployed yet. Read the inputs before doing anything else:
+This skill runs whenever a product is deployed or about to be, or the user directly asks to set up monitoring or a feedback channel after release — no pipeline state is required to start. What "the deploy gate passed" means depends on `deploy_status`, when known: `executed` means production is live and its must-scenarios are verified; `deferred` means the strategy and runbook are approved but nothing is deployed yet. Gather the inputs before doing anything else:
 
-- **`deploy_status`** from the state file — `executed` or `deferred`. This decides the tense of everything this skill writes: read it first, before drafting anything.
-- `deploy_target` from the state file — what the product runs on (or will run on), which bounds what monitoring is even available.
+- **`deploy_status`** — `executed` or `deferred`. If `docs/spp/pipeline-state.md` exists, read it from there; otherwise ask the owner or infer it from context. This decides the tense of everything this skill writes: settle it first, before drafting anything.
+- `deploy_target` — what the product runs on (or will run on), which bounds what monitoring is even available. From the state file if it exists, otherwise from the owner.
 - `product_type` — what kind of product this is, which shapes what a feedback channel should look like.
-- `docs/spp/08-deploy-runbook.md` — how the product is actually deployed (or will be), so monitoring proposals match reality instead of a generic template.
+- `docs/spp/08-deploy-runbook.md` — how the product is actually deployed (or will be), so monitoring proposals match reality instead of a generic template. Use it if it exists; if there is no such runbook (standalone invocation with no prior pipeline run), work from what the owner tells you about the deploy instead.
 
-On starting work, write `current_phase: 9`, `phase_status: in_progress`.
+If `docs/spp/pipeline-state.md` exists, on starting work write `current_phase: 9`, `phase_status: in_progress`. If it doesn't exist, skip this — there is no pipeline journal to update.
 
 ### 1. Set up minimal monitoring within the deploy strategy
 
@@ -89,12 +89,12 @@ The question depends on `deploy_status`:
 
 Either way, show them where `09-operations.md` lives and walk through it briefly rather than just linking it — this is the one document they need without an agent present. While the question is outstanding, `phase_status: gate_pending`.
 
-- **On acceptance:** set `phase_status: approved`, log the decision in the Decisions log (date, phase 9, "pipeline complete," the `deploy_status` at closure, who accepted it) — then set `current_phase: done`. This is the pipeline's terminal state; nothing downstream reads past it as an active phase, regardless of whether the underlying product is live or the deploy is still pending.
-- **On requested changes:** if the owner wants the incident steps clarified, the monitoring adjusted, or the feedback channel changed, revise `09-operations.md` (and the actual monitoring or channel setup, if that's what changed and `deploy_status` is `executed`) and re-ask. Do not set `current_phase: done` until the gate is actually accepted.
+- **On acceptance:** if `docs/spp/pipeline-state.md` exists, set `phase_status: approved`, log the decision in the Decisions log (date, phase 9, "pipeline complete," the `deploy_status` at closure, who accepted it) — then set `current_phase: done`. This is the pipeline's terminal state; nothing downstream reads past it as an active phase, regardless of whether the underlying product is live or the deploy is still pending. If there is no pipeline journal (standalone invocation), there is nothing to update — proceed straight to the next step below.
+- **On requested changes:** if the owner wants the incident steps clarified, the monitoring adjusted, or the feedback channel changed, revise `09-operations.md` (and the actual monitoring or channel setup, if that's what changed and `deploy_status` is `executed`) and re-ask. If a pipeline journal exists, do not set `current_phase: done` until the gate is actually accepted.
 
-### 6. Hand off — there is no next skill
+### 6. Hand off
 
-Do not name a next skill; there isn't one. State plainly instead that the pipeline has finished its first pass, and that new feedback restarts it: a new idea brief goes back through `super-puper-powers:idea-intake` (new idea or a real change in direction) or `super-puper-powers:mvp-scoping` (a new feature fitting the existing product). Do not begin that next cycle yourself in this session unless the owner explicitly asks to start it now — this skill's job ends at a closed loop, not an opened one.
+See `## Next step` at the end of this document for what to tell the owner once the gate is accepted.
 
 ## Red Flags
 
@@ -109,3 +109,14 @@ Do not name a next skill; there isn't one. State plainly instead that the pipeli
 | "`deploy_status` is deferred, but I'll still say 'the product is live' at the gate to make the pipeline feel finished" | It isn't live, and saying so is a false claim about production — the exact thing the pipeline's verification discipline forbids everywhere else. Deferred gets its own gate question that says "when you deploy," never "is live." |
 | "I'll set up real monitoring now even though deploy is deferred, so it's ready to go" | There's nothing live to monitor — configuring a dashboard against a deployment that doesn't exist yet either fails outright or silently monitors the wrong thing. Write it as setup-at-deploy-time instructions instead; don't perform the setup early. |
 | "It's a static site, I'll add an error-tracking service anyway just to be thorough" | A static `web` product with no backend can't produce server errors — inventing an error-monitoring channel for it isn't thoroughness, it's fabricating a problem the architecture doesn't have. Monitoring degrades to deploy-status plus an optional uptime ping; that's the complete, correct answer, not a shortcut. |
+
+## Next step
+
+This is the last phase of the recommended route — the product is deployed and has
+minimal monitoring and a feedback channel. Tell the user in their own language that:
+- the route is complete;
+- from here, real usage and feedback drive what comes next;
+- when they have the next idea or a new iteration, the natural starting point is the
+  `idea-intake` skill in a fresh chat.
+
+Do not auto-invoke anything. The user drives what happens next.

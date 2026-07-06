@@ -21,9 +21,9 @@ Standalone: whenever asked to check a product before showing it, independent of 
 
 ## Process
 
-### 0. Read state
+### 0. Confirm ordering
 
-Read `docs/spp/pipeline-state.md`. Confirm `data_boundaries_checked: true` is set — this checkpoint runs after that one, not instead of it. If it isn't set and a pipeline is in progress, stop and run `data-boundaries` first. If running standalone (no pipeline in progress), skip state entirely and go straight to step 1.
+Confirm `docs/spp/06-data-boundaries.md` exists on disk — this checkpoint runs after data-boundaries, not instead of it. If it does not exist and a pipeline is in progress, run `data-boundaries` first. If running standalone, skip this ordering check and go to step 1.
 
 ### 1. Audit — no fixes yet
 
@@ -61,7 +61,7 @@ Write `docs/spp/06-pre-show-audit.md` per the Artifact section below.
 
 ### 6. Update state
 
-Set `pre_show_audit_checked: true` in `docs/spp/pipeline-state.md`, with the artifact path (`docs/spp/06-pre-show-audit.md`). This is a state update, not a gate — there is no owner-facing question attached to it. Hand control back to the orchestrator to proceed toward the acceptance demo.
+Write the artifact `docs/spp/06-pre-show-audit.md` — its presence on disk is what the orchestrator checks before the acceptance demo. If a pipeline journal is being kept, you may note completion there too, but the on-disk artifact is the source of truth, not a flag field. Hand control back to the orchestrator.
 
 ## Artifact
 
@@ -84,9 +84,9 @@ Set `pre_show_audit_checked: true` in `docs/spp/pipeline-state.md`, with the art
 - Audit report produced before any fix was made.
 - Every finding is classified as blocker or not, with a stated reason when deferred.
 - All blockers are fixed, or explicitly deferred with a reason recorded in the artifact.
-- `pre_show_audit_checked: true` is set in `docs/spp/pipeline-state.md` with the artifact path.
+- `docs/spp/06-pre-show-audit.md` exists on disk (this is what the orchestrator checks, not a flag field).
 
-Running standalone (no pipeline): skip the state-field step and treat the pipeline artifact as optional — report the audit findings directly instead.
+Running standalone (no pipeline): the on-disk artifact is optional — report the audit findings directly instead.
 
 ## Red Flags
 
@@ -98,3 +98,11 @@ Running standalone (no pipeline): skip the state-field step and treat the pipeli
 | "There's a lot of findings, I'll just push through and fix them all" | Stop and flag it instead. A large fix batch right before a demo is itself a risk — re-scope into smaller pieces rather than making a big undisclosed change. |
 | "The export code exists, so it must be clean" | Generate a real export and read the file. A code path that exists and one that produces a secret-free file are different claims. |
 | "This is a phase-6 checkpoint, so it needs its own owner-facing gate" | No separate human gate here. Findings become fix-tasks; the acceptance demo remains the only human gate of phase 6. |
+
+## Next step
+
+This is a phase-6 checkpoint. When it's done:
+- in a running pipeline, control returns to the orchestrator, which proceeds to the acceptance demo;
+- run standalone, just tell the user the pre-show audit is done and what you found.
+
+Do not auto-invoke anything. The orchestrator or the user drives what comes next.

@@ -4,7 +4,7 @@ description: Use when starting any conversation - orchestrates the SPP pipeline 
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes; added Codex platform notes pointing to a Codex-tools reference
+> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes; added Codex platform notes pointing to a Codex-tools reference; reworked the enforcing state-machine into a context router — cross-phase order is now a recommendation, pipeline-state.md is an optional journal, and phase-6 safety gates read on-disk artifacts instead of state-file phase status
 
 <SUBAGENT-STOP>
 If you were dispatched as a subagent to execute a specific task, ignore this skill.
@@ -22,13 +22,19 @@ This is not negotiable. You cannot rationalize your way out of this.
 
 **Invoke relevant or requested skills BEFORE any response or action** — including clarifying questions, exploring the codebase, or checking files. If it turns out wrong for the situation, you don't have to use it.
 
-**Before any product work:** read `docs/spp/pipeline-state.md` and follow the pipeline map below.
+**Before any product work:** if `docs/spp/pipeline-state.md` exists, read it as memory for context, then route to the skill that matches the request. The pipeline map below is a recommended order, not a gate.
 
 Then announce "Using [skill] to [purpose]" and follow the skill exactly. If it has a checklist, create a todo per item.
 
-## Pipeline Map
+## Recommended Route
 
-The SPP pipeline turns a product idea into a deployed product across ten phases, 0 through 9. Every phase has exactly one worker skill, writes exactly one artifact under `docs/spp/`, and ends in exactly one gate. Skill names below are plain phase-map identifiers — invoke the skill matching that name (e.g. "invoke the idea-intake skill").
+The SPP route turns a product idea into a deployed product across ten phases, 0-9.
+This is a **recommended order, not an enforced one.** Every phase has one worker
+skill and writes one artifact under `docs/spp/`. You may enter at any phase, run a
+single skill standalone, or skip phases — the dispatcher never blocks you on order.
+Each phase skill ends by suggesting the next one; you decide when to take it.
+
+Skill names below are plain phase-map identifiers — invoke the skill matching that name (e.g. "invoke the idea-intake skill").
 
 | Phase | Skill | Artifact | Gate |
 |---|---|---|---|
@@ -47,47 +53,52 @@ Phase 8's gate has two modes, recorded as `deploy_status` in state: `executed` �
 
 ## Session Start Protocol
 
-At the start of every session, before responding to anything product-related:
+At the start of a session:
 
-1. Check whether `docs/spp/pipeline-state.md` exists.
-2. **It exists:** read it in full. Announce "Pipeline on phase N, continuing with `<skill>`." Then act per the State Machine below — it tells you exactly which skill to launch and whether to re-ask a pending gate.
-3. **It does not exist, and the user is describing a product idea:** offer to start the pipeline at phase 0 — invoke the idea-intake skill.
-4. **It does not exist, and the user is not describing a product idea:** this skill does not apply yet. Fall through to whatever other skill matches the actual request.
+1. If the user names a skill or describes a task, match it and invoke that skill —
+   directly, regardless of any pipeline position. This is the default path.
+2. If `docs/spp/pipeline-state.md` exists, read it as **memory** (what this project
+   is, what has already been done, decisions taken). Use it for context only — never
+   to force "continue phase N". At most, remind the user where they left off and let
+   them choose.
+3. If the user is describing a fresh product idea and no journal exists, offer to
+   start at phase 0 by invoking `idea-intake`.
 
-## State Machine
-
-The state file's life cycle, condensed from the spec:
-
-1. The phase-N skill, on starting work, writes `current_phase: N`, `phase_status: in_progress`.
-2. When it presents the gate question to the user → `phase_status: gate_pending`.
-3. After the user approves → `phase_status: approved` + a new entry in the Decisions log. `current_phase` is **not** incremented here — the next phase's skill sets it when it starts.
-4. Orchestrator behavior on session start, read directly off `(current_phase, phase_status)`:
-   - `(N, in_progress)` or `(N, gate_pending)` → continue phase N. If `gate_pending`, re-ask the gate question verbatim — do not re-run the phase's work.
-   - `(N, approved)` → launch phase N+1's skill.
-   - `phase_status: stopped` or `current_phase: done` → the pipeline is terminal. Do not continue it. `stopped` is a deliberate, successful stop (e.g. a discovery kill-shot) — report that outcome, don't treat it as a failure to route around.
-
-<HARD-GATE>Phase N+1 MUST NOT start until phase N's gate is approved in docs/spp/pipeline-state.md.</HARD-GATE>
+The dispatcher routes by context, like upstream `using-superpowers`. It does not
+drive the user through phases.
 
 ## Phase 6 Gate Ownership
 
-Phase 6 is different: its worker skill is the vendored subagent-driven-development skill, which knows nothing about `pipeline-state.md` and, left alone, walks straight from its final whole-branch review into `finishing-a-development-branch`. The orchestrator — not the worker skill — owns this phase's gate and must intercept that transition.
+Phase 6 is different: its worker skill is the vendored subagent-driven-development skill, which knows nothing about the SPP route and, left alone, walks straight from its final whole-branch review into `finishing-a-development-branch`. The orchestrator — not the worker skill — owns this phase's safety checks and must intercept that transition. These checks are decoupled from any phase status in `pipeline-state.md`: they read the artifacts ON DISK.
 
-- If the plan spans multiple sub-projects, execute their plans in the `subproject_order` recorded in state, not in file-listing order or arrival order.
-- After subagent-driven-development's final whole-branch review completes and before the acceptance demo, the orchestrator runs two checkpoint skills in order: `super-puper-powers:data-boundaries`, then `super-puper-powers:pre-show-audit`. Each writes its artifact (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`) and sets its state field (`data_boundaries_checked`, `pre_show_audit_checked`). Their findings are fix-tasks, not human gates — the acceptance demo remains the only human-facing gate of phase 6. The acceptance demo MUST NOT start until both state fields are `true`.
-- Once both checkpoints are done, the orchestrator runs the **acceptance demo**: for every must-scenario recorded in the MVP scope, demonstrate it running live and record the result. Write the outcome to `docs/spp/06-acceptance-demo.md` as scenario → how demonstrated → result.
-- While the demo is in progress, `phase_status` is `gate_pending`. A failed scenario is not a gate failure to negotiate around — it's a task: fix it, then re-run the demo for that scenario.
+- If the plan spans multiple sub-projects, execute their plans in the `subproject_order` recorded in the journal, not in file-listing order or arrival order.
+- After subagent-driven-development's final whole-branch review completes and before the acceptance demo, the orchestrator runs two checkpoint skills in order: `super-puper-powers:data-boundaries`, then `super-puper-powers:pre-show-audit`. Each writes its artifact (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`). Their findings are fix-tasks, not human gates — the acceptance demo remains the only human-facing gate of phase 6. The acceptance demo must not start until both artifacts exist on disk.
+- Once both checkpoints are done, the orchestrator runs the **acceptance demo**: for every must-scenario recorded in the MVP scope, demonstrate it running live and record the result. Write the outcome to `docs/spp/06-acceptance-demo.md` as scenario → how demonstrated → result, and record it as approved once the owner accepts it.
+- A failed scenario is not a gate failure to negotiate around — it's a task: fix it, then re-run the demo for that scenario.
 
-`pipeline-state.md` records `data_boundaries_checked` and `pre_show_audit_checked` as booleans, each paired with its artifact path (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`). Both must be `true` before the acceptance demo starts — machine-checked by opening the file, not recalled from memory.
-
-<HARD-GATE>
-Before starting the acceptance demo, you MUST machine-check `docs/spp/pipeline-state.md` first: open the file, read it, and confirm both `data_boundaries_checked: true` and `pre_show_audit_checked: true` are set, each with its artifact path recorded. If either is missing or `false`, STOP — run the missing checkpoint skill(s) before the demo. Do not rely on recalling that the checkpoints ran.
-</HARD-GATE>
+Both checkpoint artifacts (`docs/spp/06-data-boundaries.md`, `docs/spp/06-pre-show-audit.md`) must exist on disk before the acceptance demo starts — machine-checked by opening the files, not recalled from memory and not inferred from `pipeline-state.md`.
 
 <HARD-GATE>
-Before ANY invocation of finishing-a-development-branch — by the orchestrator or by any agent, including one arriving at that step from inside subagent-driven-development with no memory of this rule — you MUST machine-check `docs/spp/pipeline-state.md` first: open the file, read it, and confirm `docs/spp/06-acceptance-demo.md` is recorded as approved. Do not rely on recalling that the demo happened; recollection is exactly what a compacted context loses. If the file does not exist, or `06-acceptance-demo.md` is not approved in it, STOP — do not invoke finishing-a-development-branch under any circumstance. Return control to this orchestrator instead; the acceptance demo is not optional ceremony, it is the only human-facing verification phase 6 has.
+Before starting the acceptance demo, machine-check the artifacts ON DISK: confirm
+`docs/spp/06-data-boundaries.md` and `docs/spp/06-pre-show-audit.md` both exist and
+record their check as done. If either is missing, STOP and run the missing checkpoint
+skill (`data-boundaries`, then `pre-show-audit`) before the demo. Read the files; do
+not rely on memory or on pipeline-state.md.
 </HARD-GATE>
 
-The vendored subagent-driven-development skill walks straight from its final whole-branch review into finishing-a-development-branch with no awareness of this check — that gap is what this hard-gate exists to close from the orchestrator side. (A corresponding guard inside the vendored skills themselves is tracked separately; this rule does not depend on that guard existing, and does not weaken if it doesn't.)
+<SAFETY-GATE kind="warn-and-confirm">
+Before ANY invocation of finishing-a-development-branch — including one arriving from
+inside subagent-driven-development — machine-check ON DISK that
+`docs/spp/06-acceptance-demo.md` exists and records the demo as approved. If it does
+not, do NOT proceed silently: warn the user plainly that the product has no passed
+acceptance demo and that merging or releasing it is risky, and get an explicit
+"yes, proceed anyway" first. This is deliberately NOT a `<HARD-GATE>`: unlike the
+checkpoint gate above, it does not block the owner — the mandatory part is the warning
+and the informed, explicit decision, not a stop. This reads the file directly, not
+pipeline-state.md.
+</SAFETY-GATE>
+
+The vendored subagent-driven-development skill walks straight from its final whole-branch review into finishing-a-development-branch with no awareness of this check — that gap is what these two gates exist to close from the orchestrator side. (A corresponding guard inside the vendored skills themselves is tracked separately; this rule does not depend on that guard existing, and does not weaken if it doesn't.)
 
 After approval, hand off to the release-fixation skill (phase 7) — release-fixation is what actually invokes finishing-a-development-branch, wrapped so its merge/PR/keep/discard menu never reaches the user as a gate.
 
@@ -111,12 +122,11 @@ The size threshold that decides `full` vs `lite` is set once, in `plan-writing`'
 
 ## Mid-Pipeline Entry
 
-The user may already have an artifact from outside the pipeline — "I already have an MVP scope," a discovery report from a previous exploration, and so on. When that happens:
+The user may already have an artifact from outside the route — "I already have an MVP scope," a discovery report from a previous exploration, and so on. Entering the route in the middle is normal, not an exception — the dispatcher routes straight to the matching phase skill. If you keep a journal:
 
 1. Create `docs/spp/pipeline-state.md` if it doesn't exist yet.
-2. Record the phase numbers being skipped in `phases_skipped`.
-3. Log the decision — what was skipped and why — in the Decisions log.
-4. Start the pipeline at the named phase, not phase 0.
+2. Record which phases were skipped, and note in the Decisions log what was skipped and why.
+3. Route to the named phase's skill directly.
 
 Do not silently accept an artifact at face value just because the user says it exists — the phase's own skill still validates it as part of starting that phase's work.
 
@@ -166,11 +176,10 @@ These thoughts mean STOP—you're rationalizing:
 | "I know what that means" | Knowing the concept ≠ using the skill. Invoke it. |
 | "The user is technical, I can show the diff" | Gates are product-language. Always. |
 | "Spec looks fine, skip spec-review" | The review loop is mandatory. |
-| "I'll start phase N+1, the gate is obviously fine" | approved in the state file, or it didn't happen. |
-| "I remember the acceptance demo passed, I'll go straight to finishing-a-development-branch" | Memory is not the gate. Machine-check `docs/spp/pipeline-state.md` for `06-acceptance-demo.md` approved, every single time, even (especially) after a context compaction that erased the memory of running the demo. |
+| "I remember the acceptance demo passed, I'll go straight to finishing-a-development-branch" | Memory is not the check. Machine-check the on-disk artifact `docs/spp/06-acceptance-demo.md` for the demo recorded as approved, every single time, even (especially) after a context compaction that erased the memory of running the demo. |
 | "The plan is tiny, I'll skip straight to lite without checking `pipeline_profile`" | `pipeline_profile` is set by `plan-writing`'s size estimate, not by eyeballing the plan in phase 6. Read the field; don't re-derive the threshold here. |
 | "Lite mode means we can also skip plan-review since the plan is small" | Lite only thins phase 6 execution machinery. `spec-review`, `cross-spec-review`, and `plan-review` run regardless of profile — they're cheap and they catch defects before code exists. |
-| "I'll go straight to the acceptance demo, the build looks clean" | data-boundaries and pre-show-audit run first. Machine-check `data_boundaries_checked` and `pre_show_audit_checked` are `true` in pipeline-state.md before the demo. |
+| "I'll go straight to the acceptance demo, the build looks clean" | data-boundaries and pre-show-audit run first. Machine-check the on-disk artifacts `docs/spp/06-data-boundaries.md` and `docs/spp/06-pre-show-audit.md` both exist before the demo. |
 
 ## User Instructions
 

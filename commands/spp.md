@@ -1,14 +1,15 @@
 ---
-description: Start or resume the Super Puper Powers pipeline
+description: Start or route the Super Puper Powers skills
 ---
 
-Read `docs/spp/pipeline-state.md`.
+Invoke the `super-puper-powers:using-super-puper-powers` skill (the dispatcher) first.
 
-- If it exists: announce "Pipeline on phase N, continuing with <skill>" and continue
-  from `current_phase` according to the state machine in the
-  super-puper-powers:using-super-puper-powers skill (invoke it via the Skill tool first).
-- If it does not exist: tell the user this project has no SPP pipeline yet and offer
-  to start phase 0 by invoking the super-puper-powers:idea-intake skill. Ask them to
-  describe the product idea in a couple of sentences.
+- If the user named a skill or task, the dispatcher routes to it directly — no
+  pipeline position required.
+- If `docs/spp/pipeline-state.md` exists, the dispatcher reads it as memory and
+  reminds the user where they left off, without forcing the next phase.
+- If the user is describing a fresh product idea and no journal exists, offer to
+  start at phase 0 with `idea-intake`.
 
-Takes no arguments in v0.1.
+The route 0→9 is a recommendation, not an enforced sequence. Any skill is callable
+at any time.
