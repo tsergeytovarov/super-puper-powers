@@ -1,6 +1,6 @@
 # super-puper-powers
 
-A Claude Code plugin that runs a 10-phase pipeline from a product idea to a deployed product — for people **without developer skills**.
+A plugin for agentic coding tools — Claude Code and OpenAI Codex — that runs a 10-phase pipeline from a product idea to a deployed product, for people **without developer skills**.
 
 Every phase produces one artifact and ends in one gate. Every gate is asked in product language: scenarios, demos, money. Never a diff, never architecture, never "go read the code." Technical decisions (architecture, data model, error handling, stack trade-offs) are made and recorded by the agent — the human only ever approves outcomes they can actually judge.
 
