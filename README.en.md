@@ -2,42 +2,40 @@
 
 > Русская версия: [README.md](./README.md)
 
-A plugin for agentic coding tools — Claude Code and OpenAI Codex — that takes a person
-from a raw idea to a deployed product in ten phases, built so that the person
+A plugin for agentic coding tools — Claude Code and OpenAI Codex. It walks a person
+from a raw idea to a deployed product across ten phases, and does it so the person
 **doesn't need to know how to code**.
 
-Every phase ends in a question that the product owner can answer, not an
-engineer: about scenarios, about money, about whether the demo actually works. Technical
-decisions — architecture, data model, error handling, stack choice — the agent makes on
-its own and records with reasoning. Not a single gate is phrased in the language of a
-diff or an architecture.
+Every phase ends in a question the product owner answers, not the engineer: about
+scenarios, about money, about whether the demo actually works. The technical part —
+architecture, data model, error handling, stack choice — the agent decides on its own and
+records with reasoning. Not one gate speaks the language of a diff or an architecture.
 
-The implementation core is taken from [obra/superpowers](https://github.com/obra/superpowers)
-v6.1.1 (MIT, author Jesse Vincent). The phases before code (discovery, MVP, stack) and after
-(release, deploy, operations) are original.
+The implementation core comes from [obra/superpowers](https://github.com/obra/superpowers)
+v6.1.1 (MIT, author Jesse Vincent). The phases before code — discovery, MVP, stack — and after
+— release, deploy, operations — are original.
 
 ---
 
 ## Why this exists
 
-There's a person with a product idea — a telegram bot, a small web service, a utility. They
+There's a person with a product idea. A telegram bot, a small web service, a utility. They
 don't write code. The usual path is closed to them: to reach a working product you have to make
 dozens of technical decisions you can't judge, and at every step someone asks you about
 something you don't understand.
 
-SPP closes that gap. The agent runs the entire technical side, and only asks the human
-what they can actually answer: what problem are we solving, for whom, which scenarios matter,
-how much are they willing to pay for hosting, is this the right product on the demo. Everything
-else is the agent's job, and it's recorded in documents you can reread
-six months later.
+SPP closes that gap. The agent runs the whole technical side and only asks the human what they
+can actually answer: what problem are we solving, for whom, which scenarios matter, how much
+they'll pay for hosting, whether the demo is the right product. The rest is the agent's job, and
+it's recorded in documents you can reread six months later.
 
 ## Why it works this way
 
 Five principles. Breaking any one of them is a defect, not a style choice.
 
-1. **Every gate with a human is phrased in product language.** Scenarios, demos, money. Never
-   a diff, never architecture. If a gate asks the owner about a merge or a database schema —
-   that's a broken gate.
+1. **Every gate with a human is in product language.** Scenarios, demos, money. Never a diff,
+   never architecture. If a gate asks the owner about a merge or a database schema — the gate is
+   broken.
 2. **The agent makes technical decisions on its own** and records them in writing with
    reasoning. The human is only asked what they can actually answer.
 3. **Every phase produces a document and ends in a gate.** Six months later it's clear
@@ -47,24 +45,22 @@ Five principles. Breaking any one of them is a defect, not a style choice.
    session reads it for context, not as enforcing state: the journal gates nothing and forces no
    next phase. Interrupting work and coming back tomorrow is the normal case, not an incident.
 5. **The right to say no-go.** Discovery can legitimately kill the project. Stopping on an idea
-   that won't fly is a phase win, not a failure — months of work saved.
+   that won't fly is a win for the phase, not a failure: months of work saved.
 
 ## What we build on and what we extend
 
-obra/superpowers is a library of composable skills that make an agent follow
-engineering discipline: TDD, systematic debugging, review after every task,
-"evidence before assertions," subagents with clean context. All of this is a strong
-core for **code implementation**, and it's taken as-is in full.
+obra/superpowers is a library of composable skills that keep an agent in engineering
+discipline: TDD, systematic debugging, review after every task, evidence before assertions,
+subagents with clean context. A strong core for **code implementation**, taken whole.
 
-But upstream starts at technical design and ends at merge. It silently
-assumes the idea is valid, the stack is already chosen, someone downstream will handle
-deploy, and the human on the other side of the gates is a developer. SPP fills in what's
-missing:
+But upstream starts at technical design and ends at merge. It silently assumes the idea is
+valid, the stack is already chosen, someone downstream will handle deploy, and the human on the
+other side of the gates is a developer. SPP fills in what's missing:
 
 - **Before code** — discovery, MVP-scoping, and stack-selection phases, which upstream has
   none of.
 - **Document review** — an independent check of the spec and the plan by a subagent with clean
-  context (upstream reviews code, but not the spec or the plan — inconsistent).
+  context. Upstream reviews code, but not the spec or the plan — inconsistent.
 - **After code** — release fixation, choosing and executing a deploy strategy, operations with
   a feedback loop.
 - **A dispatcher-orchestrator and a journal** — route work by context and tie disparate skills
@@ -93,11 +89,11 @@ dispatcher: it routes by the context of the request (like upstream `using-superp
 than marching the person through phases. Any skill can be invoked directly by name or request at
 any time; there is no "phase N+1 doesn't start until phase N's gate is confirmed" rule. Each
 phase skill ends by suggesting the next logical step and offering to start it in a fresh chat —
-the person drives the transition, not automation (the one exception is plan-writing, which hands
-off straight into subagent-driven-development in the same session).
+the person drives the transition, not automation. The one exception is plan-writing, which hands
+off straight into subagent-driven-development in the same session.
 
 The journal `docs/spp/pipeline-state.md` is optional: it's cross-chat memory and a decisions log
-(what the project is, what's been done, jurisdiction, chosen stack), not a state machine. It
+— what the project is, what's been done, jurisdiction, chosen stack — not a state machine. It
 blocks no skill. At the start of a session the orchestrator reads it as context and reminds you
 where you left off — but whether to continue from that phase or invoke something else is your
 call. So the pipeline survives a restart, a context compaction, and a week-long pause.
@@ -117,9 +113,9 @@ Output: an idea brief; at the gate you confirm you were understood correctly.
 
 **Phase 1 — product-discovery.** The agent goes off to research: competitors, legal risks,
 demand, whether this can actually be built. You pick a mode — quick (half an hour) or deep
-(hours). Nothing else is needed from you until the report arrives. Output: a report with an
-"idea killers" section and a recommendation; at the gate you decide go / pivot / stop. Stopping
-here is fine — it's months of work saved.
+(hours). Nothing else from you until the report lands. Output: a report with an "idea killers"
+section and a recommendation; at the gate you decide go / pivot / stop. Stopping here is fine —
+it's months of work saved.
 
 **Phase 2 — mvp-scoping.** The agent sorts features into "first version / later / never" and
 assembles a minimal end-to-end scenario. From you — decisions on the disputed points, one at a
@@ -543,11 +539,11 @@ environment detection for Codex is in
 SPP is an extended replacement for obra/superpowers, not an addition to it. The entire
 implementation core of upstream (TDD, systematic debugging, code review, subagent-driven
 development, worktrees, parallel agents) is vendored inside SPP: the same skills, the same
-commands, working exactly the same way. On top of that, SPP adds the whole pipeline — discovery,
-MVP, stack, spec, deploy, operations.
+commands, working exactly the same way. On top, SPP adds the whole pipeline — discovery, MVP,
+stack, spec, deploy, operations.
 
-That's why **keeping both plugins isn't just unnecessary — it's harmful.** If you have
-obra/superpowers installed and want the pipeline — just replace one with the other:
+So **keeping both plugins isn't just pointless — it's harmful.** If you have obra/superpowers
+installed and you want the pipeline, just replace one with the other:
 
 ```
 /plugin uninstall superpowers@<marketplace-name>
