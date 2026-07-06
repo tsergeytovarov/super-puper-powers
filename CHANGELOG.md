@@ -2,6 +2,26 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/).
 
+## [0.4.0] — 2026-07-06
+
+### Добавлено
+
+- Standalone-вызов фазовых скиллов. discovery, mvp-scoping, stack-selection, spec-writing и
+  plan-writing теперь срабатывают не только внутри pipeline, но и по прямому запросу
+  («сделай discovery для этой идеи», «накидай MVP-scope»), работая без обязательного
+  pipeline-state и не двигая фазы. Поведение внутри pipeline не изменилось.
+- Codex-ready. Репозиторий несёт Codex-манифест (`.codex-plugin/plugin.json`) и заметку
+  `references/codex-tools.md` (multi-agent конфиг, детект окружения). В README — раздел
+  установки под Codex и то, как запускать pipeline без SessionStart-хука. Публикация в
+  официальном Codex marketplace — отдельный внешний процесс.
+
+### Изменено
+
+- Позиционирование относительно obra/superpowers. SPP — расширенная замена, а не
+  дополнение: всё ядро superpowers внутри, держать оба плагина не нужно и вредно (двойной
+  SessionStart-хук). Раздел «Совместимость» переписан в оба README: удали upstream, поставь
+  SPP, получи то же плюс pipeline — один плагин вместо двух.
+
 ## [0.3.1] — 2026-07-05
 
 ### Изменено
