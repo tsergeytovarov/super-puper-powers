@@ -1,0 +1,22 @@
+{
+  "name": "super-puper-powers",
+  "interface": {
+    "displayName": "Super Puper Powers"
+  },
+  "plugins": [
+    {
+      "name": "super-puper-powers",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/tsergeytovarov/super-puper-powers.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE",
+        "products": ["CODEX"]
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

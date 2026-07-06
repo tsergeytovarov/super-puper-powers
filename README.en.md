@@ -449,11 +449,21 @@ offers to start at phase 0.
 
 The repository also carries a Codex manifest (`.codex-plugin/plugin.json`) — SPP is ready to use
 under OpenAI Codex, not just Claude Code. The skills live in `./skills/`, and Codex reads them
-from there.
+from there. There are two ways to install.
 
-Publishing to the official Codex plugin marketplace (openai/plugins) is a separate external
-process, not done yet. For local use there's a script — it wires the skills in as Codex personal
-skills via symlinks, so the repository stays the source of truth:
+**Option 1 — via marketplace (recommended).** The official Codex Plugin Directory is still closed
+(OpenAI: "coming soon"), so SPP ships as a repo marketplace — which is exactly how OpenAI
+recommends distributing plugins right now. The repository carries
+`.agents/plugins/marketplace.json`; add it and install the plugin:
+
+```
+codex plugin marketplace add tsergeytovarov/super-puper-powers
+codex plugin add super-puper-powers@super-puper-powers
+```
+
+**Option 2 — as personal skills, via the script.** If you'd rather work from a clone of the
+repository — editing skills, keeping the repo as the source of truth — the script symlinks the
+skills into `~/.agents/skills`:
 
 ```
 ./scripts/install-codex.sh            # install/refresh symlinks in ~/.agents/skills

@@ -13,8 +13,12 @@
 
 - Скрипт `scripts/install-codex.sh` — установка скиллов под Codex одной
   командой вместо ручной линковки. Идемпотентный, не трогает чужие папки в
-  `~/.agents/skills`, при `--uninstall` снимает только свои симлинки. Разделы
-  «Установка в Codex» в обоих README переписаны на скрипт.
+  `~/.agents/skills`, при `--uninstall` снимает только свои симлинки.
+- Codex repo-marketplace: `.agents/plugins/marketplace.json`. SPP ставится
+  через `codex plugin marketplace add` прямо из репозитория — официально
+  рекомендованный способ дистрибуции под Codex, пока официальный Plugin
+  Directory закрыт. Разделы «Установка в Codex» в обоих README переписаны на
+  два способа: marketplace (рекомендованный) и personal skills через скрипт.
 
 ## [0.4.0] — 2026-07-06
 
