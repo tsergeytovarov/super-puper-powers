@@ -587,11 +587,13 @@ Copyright (c) 2025 Jesse Vincent.
 
 ## Versions
 
-Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 1.1.0: eight new
-course-coverage skills — two phase-6 checkpoints (`data-boundaries`, `pre-show-audit`) and six
-standalone helpers — additive, without breaking the 1.0.0 public contract. Behind it: the plugin
-build (0.1.0), refinements from two dogfooding runs of the pipeline (0.2.0), the differentiator
-verdict in discovery (0.3.0), auto-disambiguation for the orchestrator (0.3.1), positioning as a
-replacement for obra/superpowers, standalone invocation of phase skills, and Codex readiness
-(0.4.0), and the first stable release 1.0.0 — a one-command Codex install script and the skill
-public API plus pipeline state declared stable.
+Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 2.0.0: the switch to a
+freely-callable-skills model — the enforcing state machine is replaced by a context-routing
+dispatcher, the phase order became a recommendation, `pipeline-state.md` became an optional
+memory journal, and phase-6 safety reads artifacts on disk. This is a behavior-contract change
+(major): the phase order is no longer guaranteed. Behind it: the plugin build (0.1.0), refinements
+from two dogfooding runs of the pipeline (0.2.0), the differentiator verdict in discovery (0.3.0),
+auto-disambiguation for the orchestrator (0.3.1), positioning as a replacement for obra/superpowers,
+standalone invocation of phase skills, and Codex readiness (0.4.0), the first stable release 1.0.0
+— the skill public API plus pipeline state declared stable, and eight course-coverage skills — two
+phase-6 checkpoints (`data-boundaries`, `pre-show-audit`) and six standalone helpers (1.1.0).
