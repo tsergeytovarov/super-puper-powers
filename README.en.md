@@ -67,6 +67,22 @@ other side of the gates is a developer. SPP fills in what's missing:
   into a pipeline with gates phrased in product language; the phase order is a recommendation,
   not enforced.
 
+## Two modes
+
+SPP runs in two modes. The first is the default.
+
+**Default — a single skill.** You invoke any skill directly, by name or as a task
+("draft an MVP scope", "pick a stack", "write the spec"); it does its job and stops. No chain,
+no phases, nothing pulled along behind it. This is exactly upstream `using-superpowers` behavior:
+one skill for the task, done. Most of the skills below are meant to be invoked individually, at
+any time.
+
+**The whole pipeline — by explicit command.** The full route from idea to deployed product runs
+only when you ask for it explicitly: `/spp pipeline` (or "run the pipeline", "using super puper
+powers pipeline"). Only then does everything turn on: mandatory artifacts, gates, hand-offs
+between phases, the state journal. Neither a product idea on its own nor an existing journal on
+disk starts the pipeline — it takes the command.
+
 ## How the pipeline works
 
 Ten phases. Each one: input → agent's work → artifact document → gate with the human.
@@ -84,19 +100,18 @@ Ten phases. Each one: input → agent's work → artifact document → gate with
 | 8 | deploy-strategy | `08-deploy-runbook.md` | "The product is live at X — do you accept it?" |
 | 9 | post-release | `09-operations.md` | final: operations handbook accepted |
 
-The 0→9 phase order is a recommended route, not a rigid sequence. The orchestrator is a
-dispatcher: it routes by the context of the request (like upstream `using-superpowers`) rather
-than marching the person through phases. Any skill can be invoked directly by name or request at
-any time; there is no "phase N+1 doesn't start until phase N's gate is confirmed" rule. Each
-phase skill ends by suggesting the next logical step and offering to start it in a fresh chat —
-the person drives the transition, not automation. The one exception is plan-writing, which hands
-off straight into subagent-driven-development in the same session.
+Inside a running pipeline the 0→9 order is a recommended route, not a rigid sequence: you can
+enter mid-way or skip a phase. There is no "phase N+1 doesn't start until phase N's gate is
+confirmed" rule. Each phase skill ends by suggesting the next logical step and offering to start
+it in a fresh chat — the person drives the transition, not automation. The one exception is
+plan-writing, which hands off straight into subagent-driven-development in the same session.
 
 The journal `docs/spp/pipeline-state.md` is optional: it's cross-chat memory and a decisions log
-— what the project is, what's been done, jurisdiction, chosen stack — not a state machine. It
-blocks no skill. At the start of a session the orchestrator reads it as context and reminds you
-where you left off — but whether to continue from that phase or invoke something else is your
-call. So the pipeline survives a restart, a context compaction, and a week-long pause.
+— what the project is, what's been done, target market, chosen stack — not a state machine. It
+blocks no skill and does not by itself switch the session into pipeline mode. At the start of a
+session the orchestrator reads it as context and reminds you where you left off — but whether to
+continue from that phase or invoke something else is your call. So the pipeline survives a
+restart, a context compaction, and a week-long pause.
 
 ## What each phase looks like from your side
 
@@ -107,13 +122,16 @@ and each phase ends by suggesting the next one and offering to open it in a fres
 the handoff to implementation — that runs on without a pause).
 
 **Phase 0 — idea-intake.** You describe the idea in a couple of sentences. Then the agent asks
-questions one at a time: what problem are we solving, for whom, how is it different, budget,
-timeline, where do your users live. From you — answers in plain language, no technical detail.
-Output: an idea brief; at the gate you confirm you were understood correctly.
+questions one at a time — six of them: what problem are we solving, for whom, how is it
+different, the success criterion, budget, timeline. It doesn't ask about country or document
+language — those aren't intake questions; discovery figures out the market when it's actually
+needed. From you — answers in plain language, no technical detail. Output: an idea brief; at the
+gate you confirm you were understood correctly.
 
 **Phase 1 — product-discovery.** The agent goes off to research: competitors, legal risks,
-demand, whether this can actually be built. You pick a mode — quick (half an hour) or deep
-(hours). Nothing else from you until the report lands. Output: a report with an "idea killers"
+demand, whether this can actually be built. First it asks which market you're targeting (needed
+for the legal-risk check), then which mode — quick (half an hour) or deep (hours). Nothing else
+from you until the report lands. Output: a report with an "idea killers"
 section and a recommendation; at the gate you decide go / pivot / stop. Stopping here is fine —
 it's months of work saved.
 
@@ -166,30 +184,32 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
 
 ### Orchestration
 
-- **using-super-puper-powers** — a dispatcher that routes by the context of the request (like
-  upstream `using-superpowers`) rather than marching the person through phases. The 0→9 phase
-  order is a recommendation to it, not enforcement: any skill is invoked directly regardless of
-  position in the map. Owns the gate language (product only, never diff or architecture), its own
-  phase 6 safety checks (which read artifacts on disk, not journal fields), and the choice of
-  lite/full mode for phase 6 based on the estimate from plan-writing. It reads the
-  `pipeline-state.md` journal as memory, not as an access switch.
+- **using-super-puper-powers** — a dispatcher with two modes. By default it behaves like upstream
+  `using-superpowers`: it takes the one skill that fits the request and stops, with no phase chain
+  pulled along. The full pipeline turns on only via an explicit command containing the word
+  "pipeline" (`/spp pipeline`); neither a product idea nor an existing on-disk journal switches
+  the mode by itself. In pipeline mode it owns the gate language (product only, never diff or
+  architecture), its own phase 6 safety checks (which read artifacts on disk, not journal fields),
+  and the choice of lite/full mode for phase 6 based on the estimate from plan-writing. It reads
+  the `pipeline-state.md` journal as memory, not as an access switch.
   - *Trigger:* in Claude Code — automatically, via the `SessionStart` hook at the start of every
     session. Codex has no hook — the skill is invoked by direct reference at the start, or to
     resume the pipeline.
   - *Standalone:* this isn't a phase or a step in someone else's chain — it's the dispatcher
     that decides which skill to run. It has no separate "standalone mode" because it is itself
-    the entry point into any pipeline work session.
-  - *In the chain:* consumes and passes nothing as a phase — at start it reads the journal as
-    context (if one exists) and routes by the request: into idea-intake, into the named phase
-    skill directly, or into release-fixation after the phase 6 gate.
+    the entry point into any work session.
+  - *In the chain:* consumes and passes nothing as a phase — by default it routes the request to
+    a single named skill and stops; on a pipeline command it reads the journal as context (if one
+    exists) and runs the phase route from idea-intake through to release-fixation.
 
 ### Phases 0–3: from idea to stack (original skills)
 
-- **idea-intake** (phase 0) — an interview, one question at a time: the problem, who it's for,
-  how it's different, the success criterion, budget, timeline, jurisdiction (where the users
-  are, where the author is), the artifact language. Doesn't re-ask what's already stated in the
-  idea description. Writes the brief and creates the state file. Gate — retelling the idea in
-  your own words.
+- **idea-intake** (phase 0) — an interview, one question at a time, six questions: the problem,
+  who it's for, how it's different, the success criterion, budget, timeline. It doesn't ask about
+  jurisdiction or document language — the artifact language is taken from the chat language, and
+  the target market is established by discovery when it's needed. Doesn't re-ask what's already
+  stated in the idea description. Writes the brief and creates the state file. Gate — retelling
+  the idea in your own words.
   - *Trigger:* automatically, by its own description-trigger — when the user describes a
     product idea and `docs/spp/pipeline-state.md` doesn't exist yet.
   - *Standalone:* this is the start itself — the whole point of the skill is to be an entry
@@ -199,16 +219,17 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
     and `00-idea-brief.md`, hands them to product-discovery.
 
 - **product-discovery** (phase 1) — research before building anything: competitors and
-  alternatives, legal risks for the jurisdiction from the brief, market and demand, feasibility
-  for a solo agent. Two modes: quick (half an hour, one subagent) and deep (hours, parallel
-  subagents plus fact-checking). A mandatory "idea killers" section and an explicit verdict on
-  the differentiator — survived / weak / killed by competitors. The only phase where stopping
-  is a normal outcome.
+  alternatives, legal risks for the target market, market and demand, feasibility for a solo
+  agent. This is the phase that asks which market you're targeting — intake no longer asks it,
+  and discovery is the first place that actually needs it (for the legal-risk check). Two modes:
+  quick (half an hour, one subagent) and deep (hours, parallel subagents plus fact-checking). A
+  mandatory "idea killers" section and an explicit verdict on the differentiator — survived /
+  weak / killed by competitors. The only phase where stopping is a normal outcome.
   - *Trigger:* by its own standalone trigger — a direct request like "check this idea for
     competitors / legal risks / whether it's worth building", and also as the recommended next
     step after phase 0 (idea-intake suggests it at the end but doesn't invoke it).
-  - *Standalone:* yes. Without `pipeline-state.md`, gathers the problem, the audience, and both
-    jurisdictions right in the conversation, writes `01-discovery-report.md` as a standalone
+  - *Standalone:* yes. Without `pipeline-state.md`, gathers the problem, the audience, and the
+    target market right in the conversation, writes `01-discovery-report.md` as a standalone
     document, the go/pivot/stop gate works the same way but doesn't touch state or the Decisions
     log. After the gate, names mvp-scoping as an option, not a mandatory next step.
   - *In the chain:* consumes `00-idea-brief.md` from idea-intake. On go — passes
@@ -240,11 +261,12 @@ standalone, outside the pipeline ("Standalone"), and its place in the handoff ch
     and also as the recommended next step after phase 2 (mvp-scoping suggests it at the end but
     doesn't invoke it).
   - *Standalone:* yes. Without an approved MVP scope, takes from the user what the product does
-    as an end-to-end scenario, plus budget/timeline/jurisdiction — and runs the same 2–3-option
+    as an end-to-end scenario, plus budget/timeline/target market — and runs the same 2–3-option
     choice. Doesn't touch state.
   - *In the chain:* consumes `02-mvp-scope.md` (the walking skeleton) and `00-idea-brief.md`
-    (budget, timeline, jurisdiction). Passes `03-stack.md` with the chosen stack and a section on
-    the test runner to spec-writing.
+    (budget, timeline). The target market, if it's needed, comes from `pipeline-state.md`, where
+    discovery writes it — it's no longer in the brief. Passes `03-stack.md` with the chosen stack
+    and a section on the test runner to spec-writing.
 
 ### Phase 4: the spec and its review
 
@@ -438,8 +460,8 @@ where the decision stays with the owner.
     (release-fixation suggests it at the end but doesn't invoke it).
   - *Standalone:* yes. It self-checks on disk whether a release version is fixed; if not, it
     warns and offers to fix it, but doesn't block.
-  - *In the chain:* consumes `product_type`, `stack`, budget, and jurisdiction from state and the
-    brief. Writes `deploy_status` (executed/deferred) to state — post-release later reads this
+  - *In the chain:* consumes `product_type`, `stack`, and the target market from state, and the
+    budget from the brief. Writes `deploy_status` (executed/deferred) to state — post-release later reads this
     field to decide whether to treat the product as live. Passes `08-deploy-runbook.md` to
     post-release.
 - **post-release** (phase 9) — minimal monitoring using the chosen hosting's own tools (without
@@ -493,11 +515,11 @@ From a local copy:
 The `@super-puper-powers-marketplace` suffix on `install` is required — Claude Code always
 requires the form `plugin-name@marketplace-name`, there's no shorthand without it.
 
-After installing, open a new Claude Code session. The startup hook injects the orchestrator —
-describe your product idea, and it picks it up on its own. Or launch it explicitly with the
-`/spp` command: it routes by context — if a `docs/spp/pipeline-state.md` journal already exists
-it reads it as memory and reminds you where you left off, without forcing the next phase; any
-skill can be invoked directly by name.
+After installing, open a new Claude Code session. In the default mode you just name a task or a
+skill — "draft an MVP scope", "pick a stack" — and it runs that one skill and stops. The full
+route from idea to deploy runs via `/spp pipeline`; a bare `/spp` also routes to a single skill.
+If a `docs/spp/pipeline-state.md` journal already exists, the orchestrator reads it as memory and
+reminds you where you left off, but doesn't switch into pipeline mode on its own.
 
 ## Install under Codex
 
@@ -583,13 +605,16 @@ Copyright (c) 2025 Jesse Vincent.
 
 ## Versions
 
-Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 2.0.0: the switch to a
-freely-callable-skills model — the enforcing state machine is replaced by a context-routing
-dispatcher, the phase order became a recommendation, `pipeline-state.md` became an optional
-memory journal, and phase-6 safety reads artifacts on disk. This is a behavior-contract change
-(major): the phase order is no longer guaranteed. Behind it: the plugin build (0.1.0), refinements
-from two dogfooding runs of the pipeline (0.2.0), the differentiator verdict in discovery (0.3.0),
-auto-disambiguation for the orchestrator (0.3.1), positioning as a replacement for obra/superpowers,
-standalone invocation of phase skills, and Codex readiness (0.4.0), the first stable release 1.0.0
-— the skill public API plus pipeline state declared stable, and eight course-coverage skills — two
-phase-6 checkpoints (`data-boundaries`, `pre-show-audit`) and six standalone helpers (1.1.0).
+Changelog history is in [CHANGELOG.md](./CHANGELOG.md). Current version — 3.0.0: the dispatcher now
+has two explicit modes — by default it runs a single skill (like upstream `using-superpowers`), and
+the whole pipeline runs only via the `/spp pipeline` command; alongside this, `idea-intake` no
+longer asks about jurisdiction or document language, and discovery establishes the target market.
+This is a behavior-contract change (major): by default a session no longer walks you through the
+phase route. Behind it: the switch to a freely-callable-skills model — the enforcing state machine
+replaced by a context-routing dispatcher, the phase order became a recommendation, `pipeline-state.md`
+became an optional memory journal (2.0.0), the plugin build (0.1.0), refinements from two dogfooding
+runs of the pipeline (0.2.0), the differentiator verdict in discovery (0.3.0), auto-disambiguation
+for the orchestrator (0.3.1), positioning as a replacement for obra/superpowers, standalone
+invocation of phase skills, and Codex readiness (0.4.0), the first stable release 1.0.0 — the skill
+public API plus pipeline state declared stable, and eight course-coverage skills — two phase-6
+checkpoints (`data-boundaries`, `pre-show-audit`) and six standalone helpers (1.1.0).
