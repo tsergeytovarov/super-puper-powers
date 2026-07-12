@@ -1,10 +1,10 @@
 ---
 name: using-super-puper-powers
-description: Use when starting any conversation - orchestrates the SPP pipeline that turns a product idea into a deployed product, resuming from docs/spp/pipeline-state.md or offering phase 0 when the user describes a product idea
+description: Use when starting any conversation - routes each request to a single SPP skill by default, running the full idea-to-deploy pipeline only when the user explicitly asks for "pipeline"
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes; added Codex platform notes pointing to a Codex-tools reference; reworked the enforcing state-machine into a context router — cross-phase order is now a recommendation, pipeline-state.md is an optional journal, and phase-6 safety gates read on-disk artifacts instead of state-file phase status
+> Modifications: reworked from the upstream orchestrator skill; platform adaptation section removed; SPP pipeline map, state machine and phase-6 gate ownership added; added a phase-6 execution profile section describing the lite path over vendored subagent-driven-development; strengthened the phase-6 finishing-a-development-branch hard-gate into a mandatory machine-check of pipeline-state.md; pipeline map and phase-8 gate description updated for the deploy-strategy executed/deferred modes; added Codex platform notes pointing to a Codex-tools reference; reworked the enforcing state-machine into a context router — cross-phase order is now a recommendation, pipeline-state.md is an optional journal, and phase-6 safety gates read on-disk artifacts instead of state-file phase status; split behavior into two explicit modes — single-skill by default (like upstream using-superpowers) and the full pipeline only on an explicit "pipeline" command
 
 <SUBAGENT-STOP>
 If you were dispatched as a subagent to execute a specific task, ignore this skill.
@@ -22,17 +22,39 @@ This is not negotiable. You cannot rationalize your way out of this.
 
 **Invoke relevant or requested skills BEFORE any response or action** — including clarifying questions, exploring the codebase, or checking files. If it turns out wrong for the situation, you don't have to use it.
 
-**Before any product work:** if `docs/spp/pipeline-state.md` exists, read it as memory for context, then route to the skill that matches the request. The pipeline map below is a recommended order, not a gate.
+Announce "Using [skill] to [purpose]" and follow the skill exactly. If it has a checklist, create a todo per item.
 
-Then announce "Using [skill] to [purpose]" and follow the skill exactly. If it has a checklist, create a todo per item.
+## Two Modes
 
-## Recommended Route
+SPP runs in two modes. **Default is single-skill. The pipeline is opt-in and never entered on its own.**
+
+### Default — single skill
+
+Match the request to exactly **one** skill — auto-matched to what the user asked, or the skill they named — invoke it, and **stop when it finishes**. This is the mode for every session and every message unless the user has explicitly asked for the pipeline (see below). It works exactly like upstream `using-superpowers`: one skill for the task at hand, nothing more.
+
+- **No pipeline.** No phase sequence, no cross-phase gates, no "continue phase N", no chaining into a next skill.
+- **Do not consult, create, or require `docs/spp/pipeline-state.md`** in this mode. If the one skill you invoked writes its own artifact as part of its own job, that's that skill's business — but you never drive a multi-phase sequence around it.
+- **A skill mentioning a "next step" is a suggestion, not a trigger.** You do not run it. The user starts the next skill themselves, in a fresh chat, if and when they want it.
+- **"The user described a product idea" does NOT mean start the pipeline.** Route to the single most relevant skill (e.g. `superpowers:brainstorming`, or `idea-intake` if they literally want an idea brief written) and stop.
+
+### Pipeline — explicit command only
+
+Enter pipeline mode **only** when the user explicitly asks for it — the word "pipeline" in the invocation: "using super puper powers pipeline", "запусти пайплайн", "run the full pipeline", or `/spp pipeline`. Nothing else triggers it — not a product idea, not an existing artifact on disk, not `pipeline-state.md` existing.
+
+In pipeline mode, and only then, everything below applies: the full 0→9 route with its mandatory artifacts, the phase gates, the phase-6 gate ownership and execution profile, the state journal, and the hand-offs between phases.
+
+If the user describes a fresh idea and hasn't asked for the pipeline, you may offer it in **one** sentence ("…or say 'pipeline' to run the full guided build from idea to deployed product"), then proceed in default single-skill mode. Offer once; do not push, do not re-offer.
+
+---
+
+## Pipeline Mode: the Route
+
+*Everything from here down applies in pipeline mode only. In default mode, ignore it and just run the one skill.*
 
 The SPP route turns a product idea into a deployed product across ten phases, 0-9.
-This is a **recommended order, not an enforced one.** Every phase has one worker
-skill and writes one artifact under `docs/spp/`. You may enter at any phase, run a
-single skill standalone, or skip phases — the dispatcher never blocks you on order.
-Each phase skill ends by suggesting the next one; you decide when to take it.
+Every phase has one worker skill and writes one artifact under `docs/spp/`. Within a
+pipeline run you may still enter at any phase or skip phases — but the pipeline as a
+whole is what the user opted into with the explicit command.
 
 Skill names below are plain phase-map identifiers — invoke the skill matching that name (e.g. "invoke the idea-intake skill").
 
@@ -51,21 +73,39 @@ Skill names below are plain phase-map identifiers — invoke the skill matching 
 
 Phase 8's gate has two modes, recorded as `deploy_status` in state: `executed` — a real deploy with a production smoke test and evidence, gated on the product being live and verified — or `deferred` — a deploy strategy is chosen and the runbook is ready, but the deploy itself is postponed, gated on accepting the strategy and runbook with no live-evidence requirement. The exact gate wording for each mode lives in `deploy-strategy`; this map only names the two modes. `deploy-strategy` (phase 8) owns the choice between the two; `post-release` (phase 9) reads `deploy_status` and, when it's `deferred`, does not treat the product as live.
 
-## Session Start Protocol
+## Deciding the Mode at Session Start
 
-At the start of a session:
+Pick the mode from the user's first request, in this order:
 
-1. If the user names a skill or describes a task, match it and invoke that skill —
-   directly, regardless of any pipeline position. This is the default path.
-2. If `docs/spp/pipeline-state.md` exists, read it as **memory** (what this project
-   is, what has already been done, decisions taken). Use it for context only — never
-   to force "continue phase N". At most, remind the user where they left off and let
-   them choose.
-3. If the user is describing a fresh product idea and no journal exists, offer to
-   start at phase 0 by invoking `idea-intake`.
+1. **Did the user explicitly ask for the pipeline?** (the word "pipeline", "using super
+   puper powers pipeline", "запусти пайплайн", `/spp pipeline`.) → **Pipeline mode.** If
+   `docs/spp/pipeline-state.md` exists, read it as memory and remind them where they
+   left off; otherwise start at phase 0.
+2. **Otherwise — default single-skill mode.** Match the request to exactly one skill and
+   invoke it. This includes the case where the user names a skill *and* the case where
+   they describe a task that maps to one. Even if `docs/spp/pipeline-state.md` exists,
+   its presence does not upgrade the request to a pipeline run — read it as memory at
+   most, never as a reason to "continue phase N."
+3. **Fresh idea, no pipeline asked for?** Still default mode: route to the single most
+   relevant skill and stop. You may offer the pipeline in one sentence per the Two Modes
+   section — then proceed with the single skill.
 
-The dispatcher routes by context, like upstream `using-superpowers`. It does not
-drive the user through phases.
+### Route to the named task — never re-discover
+
+This applies in both modes. When the user names a downstream deliverable — "I already
+have an MVP, write the spec," "pick me a stack," "turn this into a plan" — route
+**directly** to that skill (`spec-writing`, `stack-selection`, `plan-writing`, …). This
+is the single most important router behavior, and the one most easily gotten wrong.
+
+- The absence of upstream artifacts is **not** a reason to re-run `idea-intake` or
+  `product-discovery`. The target skill gathers the minimum it needs itself — every
+  phase skill has a standalone path for exactly this.
+- "The user is describing a product, so this is phase 0" is the trap. `idea-intake`
+  triggers on a *fresh idea with nothing built*. "I have an MVP and need a spec" names
+  a later deliverable — it beats `idea-intake` even though it mentions a product.
+- Do not interview the user to reconstruct phases they skipped. If a later skill
+  genuinely needs one fact (e.g. the target market), that skill asks for that one fact
+  when it needs it — you never front-load a discovery pass to fill in history.
 
 ## Phase 6 Gate Ownership
 
@@ -175,6 +215,12 @@ These thoughts mean STOP—you're rationalizing:
 | "This feels productive" | Undisciplined action wastes time. Skills prevent this. |
 | "I know what that means" | Knowing the concept ≠ using the skill. Invoke it. |
 | "The user is technical, I can show the diff" | Gates are product-language. Always. |
+| "The user invoked SPP, so I should start the pipeline" | No. Default is single-skill. The pipeline runs ONLY on an explicit "pipeline" command. One named/matched skill, then stop. |
+| "They named one skill, but I'll run the next phases too to be helpful" | Single-skill mode means run that skill and stop. A skill's "next step" mention is a suggestion for the user, not a trigger for you to chain. |
+| "pipeline-state.md exists, so this is a pipeline run — let me continue phase N" | Its existence is memory, not a mode. Without an explicit "pipeline" command, stay in single-skill mode. |
+| "User has an MVP and wants a spec — let me check the pipeline / run discovery first" | No. Route straight to `spec-writing`. A named downstream deliverable is a direct route, never a reason to re-interview or re-discover. |
+| "There's no discovery report / idea brief on disk, so I have to run those phases before I can write the spec" | Missing upstream artifacts are not a blocker. Every phase skill has a standalone path and gathers its own minimum. Invoke the named skill directly. |
+| "The user is describing a product, so this is idea-intake / phase 0" | `idea-intake` is for a fresh idea with nothing built. "I have an MVP / a scope / a spec" names a later phase and beats intake, product mention notwithstanding. |
 | "Spec looks fine, skip spec-review" | The review loop is mandatory. |
 | "I remember the acceptance demo passed, I'll go straight to finishing-a-development-branch" | Memory is not the check. Machine-check the on-disk artifact `docs/spp/06-acceptance-demo.md` for the demo recorded as approved, every single time, even (especially) after a context compaction that erased the memory of running the demo. |
 | "The plan is tiny, I'll skip straight to lite without checking `pipeline_profile`" | `pipeline_profile` is set by `plan-writing`'s size estimate, not by eyeballing the plan in phase 6. Read the field; don't re-derive the threshold here. |

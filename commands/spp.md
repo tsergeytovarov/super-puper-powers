@@ -1,15 +1,18 @@
 ---
-description: Start or route the Super Puper Powers skills
+description: Route to a single Super Puper Powers skill, or run the full pipeline with "pipeline"
 ---
 
 Invoke the `super-puper-powers:using-super-puper-powers` skill (the dispatcher) first.
 
-- If the user named a skill or task, the dispatcher routes to it directly — no
-  pipeline position required.
-- If `docs/spp/pipeline-state.md` exists, the dispatcher reads it as memory and
-  reminds the user where they left off, without forcing the next phase.
-- If the user is describing a fresh product idea and no journal exists, offer to
-  start at phase 0 with `idea-intake`.
+It runs in two modes:
 
-The route 0→9 is a recommendation, not an enforced sequence. Any skill is callable
-at any time.
+- **Default — single skill.** If the user named a skill or described a task, the
+  dispatcher routes to that one skill, runs it, and stops. No pipeline, no phase
+  sequence, no chaining. `docs/spp/pipeline-state.md` is read as memory at most, never
+  as a reason to continue a phase.
+- **Pipeline — explicit only.** If the invocation includes "pipeline" (`/spp pipeline`,
+  "запусти пайплайн", "run the full pipeline"), the dispatcher runs the full 0→9 route
+  with its mandatory artifacts, gates, and hand-offs.
+
+Nothing but an explicit "pipeline" request starts the pipeline — not a product idea,
+not an existing artifact on disk, not `pipeline-state.md` existing.
