@@ -17,9 +17,18 @@ Some environments (sandboxed, headless) give a research subagent no web-search t
 
 ### 0. Confirm the trigger and read state
 
-Read `docs/spp/pipeline-state.md`. This is the recommended phase after phase 0 (idea brief approved), but it also runs standalone on a direct request — it does not require a pipeline or an approved prior phase. If a journal exists at `current_phase: 0` and `phase_status: approved`, read `docs/spp/00-idea-brief.md` for the brief content, including the two jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) — the legal-risk research depends on both; otherwise work from the user's request directly (see step 0.5).
+Read `docs/spp/pipeline-state.md`. This is the recommended phase after phase 0 (idea brief approved), but it also runs standalone on a direct request — it does not require a pipeline or an approved prior phase. If a journal exists at `current_phase: 0` and `phase_status: approved`, read `docs/spp/00-idea-brief.md` for the brief content; otherwise work from the user's request directly (see step 0.5).
 
 On starting work, write `current_phase: 1`, `phase_status: in_progress`.
+
+### 0.2. Establish the target market (jurisdiction)
+
+`idea-intake` deliberately does not ask about jurisdiction — this is the phase that needs it, so this is where it gets asked. Check `jurisdiction.users` and `jurisdiction.author` in the state file. If either is `null` or missing, ask the user now, before dispatching legal-risk research — this is the "which market are we building for" question, framed in plain product language, not "what is your jurisdiction":
+
+- **Target market** — which country or region are the intended users in? This fills `jurisdiction.users`.
+- **Author's country** — only ask this as a short follow-up if it plausibly changes the legal picture (licensing, tax, payment handling can be governed by where the author operates, not just where users are). If it obviously doesn't matter for this idea, default `jurisdiction.author` to the same region and move on rather than asking a second dumb question.
+
+Write the answers back into the state file's `jurisdiction` fields. From here on, the legal-risk research uses both fields exactly as before. If both fields already carry real values (e.g. an older brief or a standalone caller supplied them), skip this step.
 
 ### 0.5. Standalone use (no pipeline running)
 

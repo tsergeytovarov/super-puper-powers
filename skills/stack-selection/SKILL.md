@@ -16,7 +16,8 @@ The stack is chosen explicitly, here, once — not implicitly during design, not
 Read `docs/spp/pipeline-state.md`. This is the recommended phase after phase 2 (MVP scope approved), but it also runs standalone on a direct request — it does not require a pipeline or an approved prior phase. If a journal exists at `current_phase: 2` and `phase_status: approved`, read the inputs below before doing anything else; otherwise work from the MVP scope / the user's request directly (see step 0.5):
 
 - `docs/spp/02-mvp-scope.md` — the walking skeleton and must-have scenarios; the stack has to actually run these.
-- `docs/spp/00-idea-brief.md` — budget, timeline, and jurisdiction constraints from the original brief.
+- `docs/spp/00-idea-brief.md` — budget and timeline constraints from the original brief.
+- `pipeline-state.md` — the `jurisdiction` fields (`jurisdiction.users`, `jurisdiction.author`), filled by `product-discovery`, for any hosting/residency constraints. If they're still `null` (discovery hasn't run), ask the user for the target market only if the stack choice actually hinges on it; otherwise proceed.
 
 On starting work, write `current_phase: 3`, `phase_status: in_progress`.
 

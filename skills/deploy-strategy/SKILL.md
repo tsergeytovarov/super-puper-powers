@@ -20,7 +20,8 @@ The phase's closing gate has two modes, and which one applies is a real decision
 This skill runs standalone: when a product is ready to ship, or when the owner directly asks how or where to deploy, or asks for a deploy runbook. No pipeline phase gate is required to start. If `docs/spp/pipeline-state.md` exists, read it for context and inputs:
 
 - `product_type` and `stack` from the state file — what's being deployed and what it's built with.
-- `docs/spp/00-idea-brief.md` — budget and the jurisdiction fields (`jurisdiction.users`, `jurisdiction.author`) for data-residency constraints.
+- `docs/spp/00-idea-brief.md` — budget.
+- The `jurisdiction` fields (`jurisdiction.users`, `jurisdiction.author`) from `pipeline-state.md`, filled by `product-discovery`, for data-residency constraints.
 
 If the pipeline-state journal exists, write `current_phase: 8`, `phase_status: in_progress` on starting work. If it doesn't exist, skip the state update — this skill still runs standalone without it.
 
@@ -46,7 +47,7 @@ Collect what the decision depends on:
 - `product_type` and `stack` — already in state, read them, don't re-ask.
 - Budget — already in the brief, read it, don't re-ask.
 - **The owner's existing accounts and infrastructure.** Ask this directly — do they already have a hosting account, a domain, a server, a cloud subscription they're paying for and want to reuse? **Assume nothing here.** Defaulting to "they probably have nothing" or "they probably already have a VPS" are both guesses that can send the whole recommendation sideways; ask instead of picking one.
-- **Jurisdiction's data-residency requirements** — from `jurisdiction.users` and `jurisdiction.author` in the brief. Some jurisdictions require user data to stay hosted within the users' region; check before proposing options, not after the owner has already picked one that turns out to be non-compliant.
+- **Jurisdiction's data-residency requirements** — from `jurisdiction.users` and `jurisdiction.author` in `pipeline-state.md` (filled by `product-discovery`). Some jurisdictions require user data to stay hosted within the users' region; check before proposing options, not after the owner has already picked one that turns out to be non-compliant.
 
 ### 2. Propose 2-3 options in owner language
 
