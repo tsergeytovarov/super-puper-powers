@@ -1,5 +1,5 @@
 ---
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description: Run independent Standards and Spec reviews after completing work, before merging, or when reviewing a branch or PR
 ---
 
 Invoke the `super-puper-powers:requesting-code-review` skill and follow it directly.

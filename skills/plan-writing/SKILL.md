@@ -40,9 +40,9 @@ After plan-review comes back clean, the execution handoff in step 9 still applie
 
 Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
 
-- Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
-- You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
-- Files that change together should live together. Split by responsibility, not by technical layer.
+- Design **deep modules** first: substantial behavior behind a small public interface at a clean seam. When a new interface or seam is required, use the `codebase-design` skill before fixing the file map.
+- File count is not architecture. Do not create pass-through wrappers or scatter one behavior across many tiny files merely to make each file look focused. Apply the deletion test: if removing a proposed module only moves its complexity into callers, it was shallow.
+- After the module interfaces are clear, split their implementations where doing so improves locality and keeps code reviewable. Files that change together should live together; split by responsibility, not by technical layer.
 - In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure — but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.

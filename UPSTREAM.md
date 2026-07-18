@@ -11,9 +11,16 @@ This file tracks what was vendored from `obra/superpowers` into super-puper-powe
   The tag is annotated, so the tag object itself has its own SHA (`c984ea2…`). We pin the **commit** the tag points to, not the tag-object SHA — every reference in this file and in SKILL.md attribution headers is the commit SHA above.
 - Last sync: 2026-07-05
 
+Secondary source:
+
+- Repository: https://github.com/mattpocock/skills
+- Branch: `main`
+- Imported: 2026-07-18
+- License: MIT; preserved in `LICENSE.mattpocock-skills`
+
 ## File inventory
 
-Generated from `git ls-files skills/ hooks/ LICENSE.superpowers` (30 tracked paths). Status values:
+Generated from `git ls-files skills/ hooks/ LICENSE.superpowers LICENSE.mattpocock-skills`. Status values:
 
 - `vendored as-is` — byte-identical copy from upstream, no edits.
 - `modified` — copied from upstream and edited; see Note for what changed.
@@ -25,6 +32,7 @@ Only vendored/modified/reworked files get a row. Files that are original SPP wor
 | Path | Status | Note |
 |---|---|---|
 | `LICENSE.superpowers` | vendored as-is | copy of upstream `LICENSE` |
+| `LICENSE.mattpocock-skills` | vendored as-is | copy of `mattpocock/skills` `LICENSE` |
 | `hooks/hooks.json` | vendored as-is | copy of upstream `hooks/hooks.json` |
 | `hooks/run-hook.cmd` | vendored as-is | copy of upstream `hooks/run-hook.cmd` |
 | `hooks/session-start` | modified | adapted from upstream `hooks/session-start`; skill path and injection text renamed to SPP; Cursor/Copilot platform branches removed; v0.3.1 detects a co-active upstream superpowers via enabledPlugins and appends an orchestrator-precedence note |
@@ -33,25 +41,25 @@ Only vendored/modified/reworked files get a row. Files that are original SPP wor
 | `.agents/plugins/marketplace.json` | new (not from upstream) | SPP-original Codex repo-marketplace manifest, shaped after the OpenAI Codex marketplace schema (source/policy/category); v1.0 repo-marketplace distribution |
 | `skills/using-super-puper-powers/references/codex-tools.md` | modified | adapted from upstream `using-superpowers/references/codex-tools.md`; skill references retargeted to SPP |
 | `skills/spec-writing/SKILL.md` | reworked | reworked from upstream `brainstorming`; input is approved MVP scope and stack; user questions restricted to product behavior; visual companion offer removed; terminal transition replaced with SPP review chain; design-presentation-to-user step removed; cross-plugin reference dropped |
-| `skills/plan-writing/SKILL.md` | reworked | reworked from upstream `writing-plans`; plans path `docs/spp/05-plans/`; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option |
+| `skills/plan-writing/SKILL.md` | reworked | reworked from upstream `writing-plans`; plans path `docs/spp/05-plans/`; plan header points to SPP SDD only; mandatory plan-review; execution handoff without inline option; deep-module and deletion-test guidance adapted from `mattpocock/skills` `codebase-design` |
 | `skills/spec-review/spec-reviewer.md` | modified | adapted from upstream `brainstorming/spec-document-reviewer-prompt.md` |
 | `skills/plan-review/plan-reviewer.md` | modified | adapted from upstream `writing-plans/plan-document-reviewer-prompt.md` |
 | `skills/dispatching-parallel-agents/SKILL.md` | modified | attribution header only |
 | `skills/finishing-a-development-branch/SKILL.md` | modified | attribution header only; v0.2 adds an SPP guard at the top of the body that machine-checks pipeline-state.md and stops before finishing if the phase-6 acceptance demo is not approved |
 | `skills/receiving-code-review/SKILL.md` | modified | attribution header only |
-| `skills/requesting-code-review/SKILL.md` | modified | attribution header; inline-execution subsection removed; example plan paths updated to `docs/spp/05-plans` |
-| `skills/requesting-code-review/code-reviewer.md` | vendored as-is | reviewer prompt, not edited |
+| `skills/requesting-code-review/SKILL.md` | reworked | two-axis Standards/Spec review adapted from `mattpocock/skills` `code-review`; SPP fixed-point discovery, spec locations, priorities, and `receiving-code-review` handoff added |
 | `skills/subagent-driven-development/SKILL.md` | modified | attribution header; skill links renamed to SPP names; inline-execution alternative removed (SPP is always subagent-driven, no `executing-plans` analog); SDD workdir renamed to `.spp/sdd`; example plan paths updated to `docs/spp/05-plans`; v0.2 adds three SPP phase-gate guards: a lite-profile pointer near the top of the Process section, a machine-check guard before the finishing-a-development-branch handoff, and a short Git Degradation subsection for commit/worktree/review-package steps |
 | `skills/subagent-driven-development/implementer-prompt.md` | vendored as-is | not edited |
 | `skills/subagent-driven-development/task-reviewer-prompt.md` | vendored as-is | not edited |
 | `skills/subagent-driven-development/scripts/task-brief` | modified | `.superpowers/sdd` → `.spp/sdd` |
 | `skills/subagent-driven-development/scripts/review-package` | modified | `.superpowers/sdd` → `.spp/sdd` |
 | `skills/subagent-driven-development/scripts/sdd-workspace` | modified | `.superpowers/sdd` → `.spp/sdd` |
-| `skills/systematic-debugging/SKILL.md` | modified | attribution header; skill links renamed to SPP names |
+| `skills/systematic-debugging/SKILL.md` | reworked | tight reproduction and hypothesis loop adapted from `mattpocock/skills` `diagnosing-bugs`; SPP proportional execution, boundary evidence, recent-change analysis, supporting references, and architecture escalation added |
+| `skills/systematic-debugging/scripts/hitl-loop.template.sh` | vendored as-is | HITL reproduction-loop template from `mattpocock/skills` `diagnosing-bugs` |
 | `skills/systematic-debugging/condition-based-waiting.md`, `defense-in-depth.md`, `root-cause-tracing.md` | vendored as-is | reference docs linked from SKILL.md, not edited |
 | `skills/systematic-debugging/condition-based-waiting-example.ts` | vendored as-is | example file for `condition-based-waiting.md`, not edited |
 | `skills/systematic-debugging/find-polluter.sh` | vendored as-is | bisection script referenced from `root-cause-tracing.md`, not edited |
-| `skills/test-driven-development/SKILL.md` | modified | attribution header only |
+| `skills/test-driven-development/SKILL.md` | modified | attribution header; public-seam, vertical-slice, and test-quality guidance adapted from `mattpocock/skills` `tdd` |
 | `skills/test-driven-development/testing-anti-patterns.md` | vendored as-is | reference doc linked from SKILL.md, not edited |
 | `skills/using-git-worktrees/SKILL.md` | modified | attribution header only |
 | `skills/verification-before-completion/SKILL.md` | modified | attribution header only |

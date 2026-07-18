@@ -4,7 +4,7 @@ description: Use when implementing any feature or bugfix, before writing impleme
 ---
 
 > Vendored from [obra/superpowers](https://github.com/obra/superpowers) v6.1.1 (commit d884ae04), MIT.
-> Modifications: attribution header
+> Modifications: attribution header; public-seam, vertical-slice, and test-quality guidance adapted from [mattpocock/skills](https://github.com/mattpocock/skills), MIT.
 
 # Test-Driven Development (TDD)
 
@@ -46,6 +46,14 @@ Write code before the test? Delete it. Start over.
 - Delete means delete
 
 Implement fresh from tests. Period.
+
+## Choose the test seam
+
+A **seam** is the public interface through which callers use the behavior and tests observe it. Test through the highest existing seam that reproduces the real behavior; do not reach into private methods, internal collaborators, or database state as a side channel.
+
+Before the first RED cycle, name the seam being tested. If the codebase already has an obvious public interface, use it and proceed. If the seam is new, ambiguous, or changes the architecture, confirm it with the user before creating it. Read `CONTEXT.md` and relevant ADRs when present so test names and interfaces use the project's domain language.
+
+Work in **vertical slices**: one behavior at one seam → one failing test → the minimal implementation → green → refactor. Do not write a horizontal batch of imagined tests before any implementation; each cycle should teach the next one.
 
 ## Red-Green-Refactor
 
@@ -331,7 +339,7 @@ Extract validation for multiple fields if needed.
 
 Before marking work complete:
 
-- [ ] Every new function/method has a test
+- [ ] Every new or changed behavior is exercised through a public seam
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
 - [ ] Wrote minimal code to pass each test
@@ -363,6 +371,9 @@ When adding mocks or test utilities, read [testing-anti-patterns.md](testing-ant
 - Testing mock behavior instead of real behavior
 - Adding test-only methods to production classes
 - Mocking without understanding dependencies
+- Tautological assertions that recompute the expected value using the same logic as production
+- Tests coupled to private methods or internal call sequences
+- Horizontal batches of tests written before any vertical implementation slice
 
 ## Final Rule
 
