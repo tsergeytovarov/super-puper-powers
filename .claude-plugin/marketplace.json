@@ -8,7 +8,7 @@
     {
       "name": "super-puper-powers",
       "description": "SPP: a 10-phase pipeline from idea to deployed product for non-developers. Based on obra/superpowers v6.1.1.",
-      "version": "3.0.0",
+      "version": "3.1.0",
       "source": "./",
       "author": {
         "name": "Sergey Tovarov"
